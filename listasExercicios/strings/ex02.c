@@ -4,7 +4,7 @@
 
 int main () {
     char *stringGenerica;
-    int i;
+    int i, count;
 
     if (! (stringGenerica = calloc(100, sizeof(char))))
         return 1;
@@ -12,9 +12,12 @@ int main () {
     fgets(stringGenerica, 100, stdin);
     stringGenerica[strcspn (stringGenerica, "\n")] = 0;
 
-    for (i = strlen(stringGenerica); i >= 0; i--)
-        printf("%c", stringGenerica[i]);
-    printf("\n");
+    i = 0;
+    while (stringGenerica[i])
+        i++;
+
+    printf("Contando com um for: %d\n", i);
+    printf("Contando com strlen: %lu\n", strlen(stringGenerica));
 
     free(stringGenerica);
 
