@@ -2,17 +2,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-void adicionaColchetes (char *s) {
+void troca (char *s, int a, int b) {
+    int aux;
+
+    aux = s[a];
+    s[a] = s[b];
+    s[b] = aux;
 }
 
-void adicionaCaractere (char *s, int ini) {
-    int i, j;
+void adicionaColchetes (char *s, int nonAlpha, int tam) {
+    int i;
 
-    adicionaColchetes(s);
+    s[tam+1] = '[';
+    for (i = tam; i >= nonAlpha; i--)
+        troca(s, i, i+1);
 
-    for (i = strlen(s); i >= ini; i--) {
-            
+    s[tam+2] = ']';
+    for (i = tam+1; i > nonAlpha + 1; i--)
+        troca(s, i, i+1);
+}
+
+int destacaCaractere (char *s, int tam) {
+    int i;
+
+    i = 0;
+    while(i < tam) {
+        if ((s[i] < 'a' || s[i] > 'z') && (s[i] < 'A' || s[i] > 'Z') && (s[i] <
+                    '0' || s[i] > 'Z') && (s[i] != ' ')) {
+            adicionaColchetes(s, i, tam);
+            i+= 2;
+            tam += 2;
+        }
+
+        i++;
     }
+
+    return 1;
 }
 
 int main () {
@@ -22,14 +47,11 @@ int main () {
     if (! (string = calloc(10000, sizeof(char))))
         return 1;
 
-    fgets(string, 100, stdin);
+    fgets(string, 10000, stdin);
     string[strcspn (string, "\n")] = 0;
 
-    for (i = 0; i < strlen(string); i++) {
-        if ((string[i] < 'a' || string[i] > 'z') ) {
-        
-        }
-    }
+    destacaCaractere(string, strlen(string));
+    printf("%s\n", string);
 
     free(string);
 
