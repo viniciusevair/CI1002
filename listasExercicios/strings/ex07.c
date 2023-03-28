@@ -28,7 +28,7 @@ int destacaCaractere (char *s, int tam) {
     i = 0;
     while(i < tam) {
         if ((s[i] < 'a' || s[i] > 'z') && (s[i] < 'A' || s[i] > 'Z') && (s[i] <
-                    '0' || s[i] > 'Z') && (s[i] != ' ')) {
+                    '0' || s[i] > '9') && (s[i] != ' ')) {
             adicionaColchetes(s, i, tam);
             i+= 2;
             tam += 2;
