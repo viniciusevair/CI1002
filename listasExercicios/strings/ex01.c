@@ -3,20 +3,20 @@
 #include <string.h>
 
 int main () {
-    char *string;
+    char *s;
     int i;
 
-    if (! (string = calloc(100, sizeof(char))))
+    if (! (s = calloc(100, sizeof(char))))
         return 1;
 
-    fgets(string, 100, stdin);
-    string[strcspn (string, "\n")] = 0;
+    fgets(s, 100, stdin);
+    s[strcspn (s, "\n")] = 0;
 
-    for (i = strlen(string); i >= 0; i--)
-        printf("%c", string[i]);
+    for (i = strlen(s); i >= 0; i--)
+        printf("%c", s[i]);
     printf("\n");
 
-    free(string);
+    free(s);
 
     return 0;
 }
