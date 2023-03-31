@@ -1,17 +1,16 @@
 /*
- * Unfinished
+ * Unfinished.
+ * Vou voltar aqui quando souber implementar árvores binárias.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-void listaPalavras (char *s, char caractere) {
+void listaPalavras (char *s) {
     int i, count;
 
     count = 0;
-    if (s[0] == caractere)
-        printf("%d ", count);    
 
     for (i = 0; i < strlen(s); i++)
         if (s[i] == ' ' || s[i] == '\n') {
@@ -34,7 +33,7 @@ int main () {
     fgets(s, 10000, stdin);
     s[strcspn (s, "\n")] = 0;
 
-    listaPalavras (s, caractere);
+    listaPalavras (s);
 
     free(s);
 
