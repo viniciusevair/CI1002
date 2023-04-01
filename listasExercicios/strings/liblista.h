@@ -1,5 +1,6 @@
 typedef  struct dado {
-    int dado;  /*um inteiro para guardar dados*/
+    char indice;
+    int *chaves;
 } dado_t;
 
 /*
