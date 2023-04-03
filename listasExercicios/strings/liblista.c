@@ -65,7 +65,7 @@ int adiciona_ordem_lista (lista_t *l, dado_t *dado) {
 
     memcpy (novo->dado, dado, sizeof (dado_t));
 
-    if (l->Primeiro->dado > novo->dado) {
+    if (l->Primeiro->dado->indice > novo->dado->indice) {
         novo->prox = l->Primeiro;
         l->Primeiro = novo;
         
@@ -73,7 +73,7 @@ int adiciona_ordem_lista (lista_t *l, dado_t *dado) {
     }
 
     atual = l->Primeiro;
-    while (atual->prox != NULL && novo->dado > atual->prox->dado)
+    while (atual->prox != NULL && novo->dado->indice > atual->prox->dado->indice)
         atual = atual->prox;
 
     novo->prox = atual->prox;
