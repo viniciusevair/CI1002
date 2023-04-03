@@ -1,11 +1,11 @@
 /*
  * Unfinished.
- * Vou voltar aqui quando souber implementar árvores binárias.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "liblista.h"
 
 void listaPalavras (char *s) {
     int i, count;
@@ -22,6 +22,7 @@ void listaPalavras (char *s) {
 
 int main () {
     char *s;
+    dado_t *v;
     char caractere;
     int i, tam;
 
