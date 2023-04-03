@@ -9,7 +9,9 @@
 
 void listaPalavras (char *s) {
     int i, count;
+    lista_t *lista;
 
+    lista = cria_lista();
     count = 0;
 
     for (i = 0; i < strlen(s); i++)
@@ -22,8 +24,6 @@ void listaPalavras (char *s) {
 
 int main () {
     char *s;
-    dado_t *v;
-    char caractere;
     int i, tam;
 
     tam = 10000;
@@ -31,7 +31,7 @@ int main () {
         return 1;
 
     printf("Digite pelo menos 20 palavras (separadas por espaço):\n");
-    fgets(s, 10000, stdin);
+    fgets(s, tam, stdin);
     s[strcspn (s, "\n")] = 0;
 
     listaPalavras (s);
