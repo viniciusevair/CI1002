@@ -23,9 +23,10 @@ int main () {
     fgets(s, LINEMAX, srce);
     while (! feof(srce)) {
         for (int i = 0; i < strlen(s); i++)
-            if (s[i] >= 'a' && s[i] <= 'z') {
+            if (s[i] >= 'a' && s[i] <= 'z')
                 s[i] -= 32;
-            }
+
+        fprintf(dest, "%s", s);
         fgets(s, LINEMAX, srce);
     }
 
