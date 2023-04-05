@@ -3,22 +3,11 @@
 #include <string.h>
 #define LINEMAX 1024
 
-int main () {
-    FILE *arq;
-    char *s;
-    int sum, num, aux, count;
-
-    if (! (s = calloc(LINEMAX, sizeof(char)))) {
-        perror ("Erro ao alocar memória.");
-        exit(1);
-    }
-    if (! (arq = fopen("arqTexto.txt", "r"))) {
-        perror("Erro ao abrir o arquivo.");
-        exit (1);
-    }
+int somaStringsNumeros (FILE *arq, char *s, int *count) {
+    int sum, num, aux;
 
     sum = 0;
-    count = 0;
+    (*count) = 0;
     fgets(s, LINEMAX, arq);
     while (! feof(arq)) {
         num = 0;
@@ -29,10 +18,28 @@ int main () {
                 num += aux;
             }
         sum += num;
-        count++;
+        (*count)++;
         fgets(s, LINEMAX, arq);
     }
-    printf("A média dos valores é %.4f\n", (float)sum/count);
+
+    return sum;
+}
+
+int main () {
+    FILE *arq;
+    char *s;
+    int count;
+
+    if (! (s = calloc(LINEMAX, sizeof(char)))) {
+        perror ("Erro ao alocar memória.");
+        exit(1);
+    }
+    if (! (arq = fopen("arqTexto.txt", "r"))) {
+        perror("Erro ao abrir o arquivo.");
+        exit (1);
+    }
+
+    printf("A média dos valores é %.4f\n", (float)somaStringsNumeros(arq, s, &count)/count);
 
     free(s);
     fclose(arq);
