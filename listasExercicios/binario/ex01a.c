@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    qtd = rand() % (10000 - 100 + 1) + 100;
+    qtd = rand() % (100000 - 100 + 1) + 100;
     if (! (value = calloc(qtd, sizeof(long))))
         return 1;
 
