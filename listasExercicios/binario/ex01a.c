@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
         return 1;
 
     for (i = 0; i < qtd; i++)
-        value[i] = (rand() << 2) + (rand());
+        value[i] = (rand() << 4) + (rand());
 
     ret = fwrite(value, sizeof(long), qtd, arq);
 
