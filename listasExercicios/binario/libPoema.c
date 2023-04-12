@@ -11,14 +11,11 @@ long tamanhoPoema() {
 
 void organizaPoema(FILE *arq, char *poema) {
     int pos;
-    char letra;
 
     fread(&pos, sizeof(int), 1, arq);
-    fread(&letra, sizeof(char), 1, arq);
+    fread(&poema[pos], sizeof(char), 1, arq);
     while (! feof(arq)) {
-        poema[pos] = letra;
-
         fread(&pos, sizeof(int), 1, arq);
-        fread(&letra, sizeof(char), 1, arq);
+        fread(&poema[pos], sizeof(char), 1, arq);
     }
 }
