@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <time.h>
 
 void trocar(long vetor[], long a, long b) {
@@ -55,6 +56,13 @@ int quickSort(long vetor[], int tam){
     return quickSortInterna(vetor, 0, tam-1);
 }
 
+long tamanhoArquivo() {
+    struct stat st;
+    stat("numeros.bin", &st);
+
+    return st.st_size / sizeof(long);
+}
+
 int main(int argc, char *argv[]) {
     FILE *arq;
     int i, j, menor, maior, qtd, ret;
@@ -67,7 +75,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    qtd = 100000;
+    qtd = tamanhoArquivo();
     if (! (value = calloc(qtd, sizeof(long))))
         return 1;
 
