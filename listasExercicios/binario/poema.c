@@ -15,7 +15,6 @@ void organizaPoema(FILE *arq, char *poema) {
 
     fread(&pos, sizeof(int), 1, arq);
     fread(&letra, sizeof(char), 1, arq);
-    printf("A primeira posição é %d, e a letra dessa posição é a letra %c\n", pos, letra);
     while (! feof(arq)) {
         poema[pos] = letra;
 
