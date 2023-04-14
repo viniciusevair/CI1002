@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     long *value;
 
     srand(time(NULL));
-    if (! (arq = fopen("numeros.bin", "a"))) {
+    if (! (arq = fopen(argv[1], "a"))) {
         perror("Erro ao abrir arquivo");
         exit(1);
     }

@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     long *value;
 
     srand(time(NULL));
-    if (! (arq = fopen("numeros.bin", "r"))) {
+    if (! (arq = fopen(argv[1], "r"))) {
         perror("Erro ao abrir arquivo");
         exit(1);
     }
