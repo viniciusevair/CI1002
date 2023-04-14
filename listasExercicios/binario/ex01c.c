@@ -3,6 +3,10 @@
 #include <sys/stat.h>
 #include <time.h>
 
+/* 
+ * Busca a quantidade de bytes no arquivo e divide pelo tamanho de long.
+ * Basicamente, retorna a quantidade de números escritos no ex01a.
+ */
 long tamanhoArquivo() {
     struct stat st;
     stat("numeros.bin", &st);
@@ -41,5 +45,3 @@ int main(int argc, char *argv[]) {
     free(value);
     return 0;
 }
-
-

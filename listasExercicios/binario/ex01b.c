@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+/* Troca simples dos dados de dois índices do vetor. */
 void trocar(long vetor[], long a, long b) {
     long aux;
 
@@ -56,6 +57,10 @@ int quickSort(long vetor[], int tam){
     return quickSortInterna(vetor, 0, tam-1);
 }
 
+/* 
+ * Busca a quantidade de bytes no arquivo e divide pelo tamanho de long.
+ * Basicamente, retorna a quantidade de números escritos no ex01a.
+ */
 long tamanhoArquivo() {
     struct stat st;
     stat("numeros.bin", &st);
