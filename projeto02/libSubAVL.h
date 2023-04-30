@@ -1,3 +1,4 @@
+#include <stdio.h>
 struct tNumNo {
     int pos;
     int equilibrio;
@@ -17,11 +18,17 @@ struct tNumNo *destroiNumArvore(struct tNumArvore *tree);
 
 struct tNumNo *adicionaPos(struct tNumArvore *tree, struct tNumNo *no, int pos, int *controle);
 
+struct tNumNo *buscaPos(struct tNumNo *no, int pos);
+
+int posAleatoria(struct tNumArvore *tree);
+
 /* Imprime os valores guardados na estrutura */
 void imprimeInverso(struct tNumNo *no);
 
+void imprimeInversoEmArq(FILE *arq, struct tNumNo *no);
+
 int visitaSubNodo(struct tNumNo *no);
 
-void incrementaSubIterador(struct tNumArvore *tree);
+int incrementaSubIterador(struct tNumArvore *tree);
 
 void inicializaSubIterador(struct tNumArvore *tree);

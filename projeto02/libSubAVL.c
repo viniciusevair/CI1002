@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <wchar.h>
 #include "libSubAVL.h"
 
 struct tNumArvore *criaNumArvore() {
@@ -173,34 +174,54 @@ void imprimeInverso(struct tNumNo *no) {
         return;
 
     imprimeInverso(no->dir);
-    printf("%d ", no->pos);
+    printf(" %d", no->pos);
     imprimeInverso(no->esq);
 }
 
-struct tNumNo *max(struct tNumNo *no) {
-    if (no->dir == NULL)
-        return no;
-    return max(no->dir);
+void imprimeInversoEmArq(FILE *arq, struct tNumNo *no) {
+    if (no == NULL)
+        return;
+
+    imprimeInversoEmArq(arq, no->dir);
+    fwprintf(arq, L" %d", no->pos);
+    imprimeInversoEmArq(arq, no->esq);
 }
 
-int visitaSubNodo(struct tNumNo *no) {
-    return no->pos;
-}
+struct tNumNo *nodoAleatorio(struct tNumNo *no, int qtd, int *aux) {
+    if (no == NULL)
+        return NULL;
 
-void incrementaSubIterador(struct tNumArvore *tree) {
-    struct tNumNo *prox;
-    if (tree->ponteiro->esq != NULL)
-        tree->ponteiro = max(tree->ponteiro->esq);
+    (*aux)++;
+    if ((qtd - *aux) == 0)
+        return no;        
     else {
-        prox = tree->ponteiro->pai;
-        while (prox != NULL && tree->ponteiro == prox->esq) {
-            tree->ponteiro = prox;
-            prox = prox->pai;
-        }
-        tree->ponteiro = prox;
+        struct tNumNo *esq = nodoAleatorio(no->esq, qtd, aux);
+        if (esq != NULL)
+            return esq;
+        return nodoAleatorio(no->dir, qtd, aux);
     }
+
+    return NULL;
 }
 
-void inicializaSubIterador(struct tNumArvore *tree) {
-    tree->ponteiro = max(tree->raiz);
+int quantidadeNos(struct tNumNo *no) {
+    if (no == NULL)
+        return 0;
+
+    return 1 + quantidadeNos(no->esq) + quantidadeNos(no->dir);
+}
+
+int posAleatoria(struct tNumArvore *tree) {
+    int qtd, aux, pos;
+    struct tNumNo *nodoAux;
+
+    qtd = quantidadeNos(tree->raiz);
+    nodoAux = NULL;
+    while (nodoAux == NULL) {
+        pos = rand() % qtd;
+        aux = 0;
+        nodoAux = nodoAleatorio(tree->raiz, pos, &aux);
+    }
+
+    return nodoAux->pos;
 }

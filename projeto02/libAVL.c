@@ -36,7 +36,7 @@ struct tNo *destroiArvore(struct tArvore *tree) {
     return NULL;
 }
 
-struct tNo *busca(struct tNo *no, int chave) {
+struct tNo *busca(struct tNo *no, wchar_t chave) {
     if (no == NULL)
         return NULL;
     if (no->chave == chave)
@@ -44,6 +44,15 @@ struct tNo *busca(struct tNo *no, int chave) {
     if (chave < no->chave)
         return busca(no->esq, chave);
     return busca(no->dir, chave);
+}
+
+void buscaNum(struct tNo *no, int pos, wchar_t *chave) {
+    if (no == NULL)
+        return;
+    buscaNum(no->esq, pos, chave);
+    if (buscaPos(no->subTree->raiz, pos))
+        (*chave) = no->chave;
+    buscaNum(no->dir, pos, chave);
 }
 
 struct tNo *rotEsquerda (struct tArvore *tree, struct tNo *no) {
@@ -191,7 +200,7 @@ void imprimeEmOrdem(struct tNo *no) {
         return;
 
     imprimeEmOrdem(no->esq);
-    printf("%lc: ", no->chave);
+    printf("%lc:", no->chave);
     imprimeInverso(no->subTree->raiz);
     printf("\n");
     imprimeEmOrdem(no->dir);
@@ -201,30 +210,25 @@ void imprimeDados(struct tArvore *tree) {
     imprimeEmOrdem(tree->raiz);
 }
 
-struct tNo *min(struct tNo *no) {
-    if (no->esq == NULL)
-        return no;
-    return min(no->esq);
+void imprimeOrdemEmArq(FILE *arq, struct tNo *no) {
+    if (no == NULL)
+        return;
+
+    imprimeOrdemEmArq(arq, no->esq);
+    fwprintf(arq, L"%s:", &no->chave);
+    imprimeInversoEmArq(arq, no->subTree->raiz);
+    fwprintf(arq, L"\n");
+    imprimeOrdemEmArq(arq, no->dir);
 }
 
-wchar_t chaveNodo(struct tNo *no) {
-    return no->chave;
+void imprimeDadosEmArq(FILE *arq, struct tArvore *tree) {
+    imprimeOrdemEmArq(arq, tree->raiz);
 }
 
-void incrementaIterador(struct tArvore *tree) {
-    struct tNo *prox;
-    if (tree->ponteiro->dir != NULL)
-        tree->ponteiro = min(tree->ponteiro->dir);
-    else {
-        prox = tree->ponteiro->pai;
-        while (prox != NULL && tree->ponteiro == prox->dir) {
-            tree->ponteiro = prox;
-            prox = prox->pai;
-        }
-        tree->ponteiro = prox;
-    }
-}
+int buscaDadoAleatorio(wchar_t chave, struct tArvore *tree) {
+    struct tNo *aux;
 
-void inicializaIterador(struct tArvore *tree) {
-    tree->ponteiro = min(tree->raiz);
+    aux = busca(tree->raiz, chave);
+
+    return posAleatoria(aux->subTree);
 }

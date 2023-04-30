@@ -3,12 +3,17 @@
 #include <locale.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <time.h>
 #include "libAVL.h"
 #include "libSubAVL.h"
 #include "libCodifica.h"
+#include "libDecodifica.h"
+#include "libCifra.h"
 
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "");
+    srand(time(NULL));
+
     struct tArvore *dados;
     int option;
     int flag_d = 0, flag_e = 0;
@@ -52,9 +57,22 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usa direito ai, irmão\n");
         exit(1);
     }
-    else {
-         if (flag_e) {
-            codifica(value_b, value_m, value_o, dados);
+
+    if (flag_e) {
+        if (value_b == NULL || value_o == NULL) {
+            fprintf(stderr, "Usa direito ai, irmão\n");
+            exit(1);
+        }
+        extraiDadosLivro(value_b, dados);
+        codificaMsg(value_m, value_o, dados);
+        if (value_c != NULL)
+            imprimeChaves(value_c, dados);
+    }
+    if (flag_d) {
+        if (value_b)
+            extraiDadosLivro(value_b, dados);
+        else if (value_c) {
+            transformaArquivoChaves(value_c, dados);
         }
     }
 
