@@ -12,7 +12,7 @@
 void imprimeChaves(char *c, struct tArvore *dados) {
     FILE *cifra;
 
-    if (! (cifra = fopen(c, "w, css=UTF-8"))) {
+    if (! (cifra = fopen(c, "w"))) {
         perror("Erro ao abrir arquivo");
         exit(1);
     }

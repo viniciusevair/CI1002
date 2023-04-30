@@ -12,11 +12,15 @@ struct tArvore *criaArvore() {
     }
 
     tree->raiz = NULL;
-    tree->ponteiro = NULL;
 
     return tree;
 }
 
+/*
+ * Funcao interna.
+ * Desaloca recursivamente os nos da arvore. Tambem desaloca a subarvore de cada
+ * no. Sempre retorna NULL.
+ */
 struct tNo *destroiGalhos(struct tNo *no) {
     if(no->esq != NULL)
         destroiGalhos(no->esq);
@@ -29,13 +33,14 @@ struct tNo *destroiGalhos(struct tNo *no) {
     return NULL;
 }
 
-struct tNo *destroiArvore(struct tArvore *tree) {
+struct tArvore *destroiArvore(struct tArvore *tree) {
     destroiGalhos(tree->raiz);
     free(tree);
 
     return NULL;
 }
 
+/* Funcao interna. Busca e retorna o ponteiro para uma chave da arvore. */
 struct tNo *busca(struct tNo *no, wchar_t chave) {
     if (no == NULL)
         return NULL;
@@ -46,15 +51,37 @@ struct tNo *busca(struct tNo *no, wchar_t chave) {
     return busca(no->dir, chave);
 }
 
-void buscaNum(struct tNo *no, int pos, wchar_t *chave) {
+/* Busca qual no possui o valor pos guardado. */
+struct tNo *buscaNumAux(struct tNo *no, int pos) {
+    struct tNo *verificador;
     if (no == NULL)
-        return;
-    buscaNum(no->esq, pos, chave);
+        return NULL;
+
     if (buscaPos(no->subTree->raiz, pos))
-        (*chave) = no->chave;
-    buscaNum(no->dir, pos, chave);
+        return no;
+    verificador = buscaNumAux(no->esq, pos);
+    if (verificador != NULL)
+        return verificador;
+    verificador = buscaNumAux(no->dir, pos);
+    if (verificador != NULL)
+        return verificador;
+
+    return NULL;
 }
 
+wchar_t buscaNum(struct tArvore *tree, int pos) {
+    struct tNo *noEncontrado;
+    if(! (noEncontrado = buscaNumAux(tree->raiz, pos)))
+        return L'\0';
+
+    return noEncontrado->chave;
+}
+
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Reorganiza os nos da arvore fazendo uma rotacao para a esquerda.
+ * Diminui em 1 a altura da arvore no processo.
+ */
 struct tNo *rotEsquerda (struct tArvore *tree, struct tNo *no) {
     struct tNo *aux;
     aux = no->dir;
@@ -76,6 +103,11 @@ struct tNo *rotEsquerda (struct tArvore *tree, struct tNo *no) {
     return aux;
 }
 
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Reorganiza os nos da arvore fazendo uma rotacao para a direita.
+ * Diminui em 1 a altura da arvore no processo.
+ */
 struct tNo *rotDireita (struct tArvore *tree, struct tNo *no) {
     struct tNo *aux;
     aux = no->esq;
@@ -97,6 +129,7 @@ struct tNo *rotDireita (struct tArvore *tree, struct tNo *no) {
     return aux;
 }
 
+/* Cria e aloca memoria para um no. */
 struct tNo *criaNo(wchar_t chave) {
     struct tNo *no;
     if (! (no = malloc(sizeof(struct tNo)))) {
@@ -114,6 +147,7 @@ struct tNo *criaNo(wchar_t chave) {
     return no;
 }
 
+/* Calcula a altura da arvore. */
 int altura(struct tNo *no) {
     int alturaEsq, alturaDir;
     if (no == NULL)
@@ -127,6 +161,11 @@ int altura(struct tNo *no) {
     return alturaEsq + 1;
 }
 
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Calcula e realiza as rotacoes necessarias para manter o balanceamento.
+ * Tambem atualiza a variavel de equilibrio dos nodos afetados.
+ */
 struct tNo *ajustaArvore(struct tArvore *tree, struct tNo *no, int *controle) {
     struct tNo *aux;
     if (no->equilibrio == -2) {
@@ -148,6 +187,11 @@ struct tNo *ajustaArvore(struct tArvore *tree, struct tNo *no, int *controle) {
     return aux;
 }
 
+/*
+ * Recebe uma chave e uma posicao. Busca o no da chave e adiciona a posicao
+ * na subarvore do no. Se o no da chave nao estiver presente, cria o no e a sua
+ * subarvore.
+ */
 struct tNo *adicionaChave(struct tArvore *tree, struct tNo *no, wchar_t chave, int *controle, int pos) {
     if (no == NULL) {
         int aux;
@@ -195,6 +239,7 @@ void guardaDado(struct tArvore *tree, wchar_t chave, int pos) {
     tree->raiz = adicionaChave(tree, tree->raiz, chave, &controle, pos);
 }
 
+/* Funcao auxiliar da funcao de debugging */
 void imprimeEmOrdem(struct tNo *no) {
     if (no == NULL)
         return;
@@ -210,6 +255,7 @@ void imprimeDados(struct tArvore *tree) {
     imprimeEmOrdem(tree->raiz);
 }
 
+/* Funcao auxiliar da funcao de impressao. */
 void imprimeOrdemEmArq(FILE *arq, struct tNo *no) {
     if (no == NULL)
         return;

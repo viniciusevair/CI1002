@@ -5,7 +5,6 @@
 #include "libTratamento.h"
 #ifndef AVLTREE
 #include "libAVL.h"
-#include "libSubAVL.h"
 #endif /* ifndef AVLTREE */
 
 void criaChaves(FILE *livro, struct tArvore *dados) {
@@ -48,7 +47,7 @@ int extraiDadosLivro(char *b, struct tArvore *dados) {
 int transformaArquivoChaves(char *c, struct tArvore *dados) {
     FILE *arquivo;
     wchar_t letra;
-    int numero;
+    int codigo;
 
     if (! (arquivo = fopen(c, "r"))) {
         perror("Erro ao abrir arquivo");
@@ -58,8 +57,8 @@ int transformaArquivoChaves(char *c, struct tArvore *dados) {
     letra = fgetc(arquivo);
     fgetc(arquivo);
     while (! feof(arquivo)) {
-        while (fscanf(arquivo, "%d", &numero) > 0) {
-            guardaDado(dados, letra, numero);
+        while (fscanf(arquivo, "%d", &codigo) > 0) {
+            guardaDado(dados, letra, codigo);
         }
         letra = fgetc(arquivo);
         fgetc(arquivo);

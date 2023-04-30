@@ -2,79 +2,146 @@
 #include <stdio.h>
 #include <locale.h>
 #include <getopt.h>
-#include <unistd.h>
 #include <time.h>
+
 #include "libAVL.h"
 #include "libSubAVL.h"
 #include "libCodifica.h"
 #include "libDecodifica.h"
 #include "libCifra.h"
 
-int main(int argc, char *argv[]) {
-    setlocale(LC_ALL, "");
-    srand(time(NULL));
+/*
+ * Estrutura utilizada para facilitar a passagem de parametros e leitura das
+ * funcoes encode, decode e getopt.
+ */
+struct tEntrada {
+    char *livro;
+    char *msgOriginal;
+    char *msgCodificada;
+    char *msgDecodificada;
+    char *arqvChaves;
+    int encode;
+    int decode;
+};
 
-    struct tArvore *dados;
+/* Mensagem final de todos os erros de entrada */
+void erroEntrada(char *argv[]) {
+    fprintf(stderr, "Uso:\n");
+    fprintf(stderr, "%s -e -b LivroCifra -m MensagemOriginal -o MensagemCodificada -c ArquivoDeChaves\n", argv[0]);
+    fprintf(stderr, "%s -d -i MensagemCodificada -c ArquivoDeChaves -o MensagemDecodificada\n", argv[0]);
+    fprintf(stderr, "%s -d -i MensagemCodificada -b LivroCifra -o MensagemDecodificada\n", argv[0]);
+    exit(EXIT_FAILURE);
+}
+
+/* Evitar o uso das flags -d e -e simultaneamente. */
+void conflitoEntrada(char *argv[]) {
+    fprintf(stderr, "Conflito de instrucoes. Escolha entre codificar ou decodificar.");
+    erroEntrada(argv);
+}
+
+/* Funcao para tratar a codificacao da mensagem. */
+void encode(struct tEntrada entrada, struct tArvore *dados, char *argv[]) {
+    if (entrada.livro == NULL || entrada.msgCodificada == NULL) {
+        fprintf(stderr, "Quantidade de parametros insuficiente.\n");
+        erroEntrada(argv);
+    }
+    extraiDadosLivro(entrada.livro, dados);
+    codificaMsg(entrada.msgOriginal, entrada.msgCodificada, dados);
+    if (entrada.arqvChaves)
+        imprimeChaves(entrada.arqvChaves, dados);
+}
+
+/*
+ * Funcao para tratar a decodificacao da mensagem. Caso o usuario opte por usar
+ * um livro cifra, mas ainda assim passe como argumento a flag -c, as chaves
+ * geradas pelo livro serao salvas no arquivo de chaves.
+ */
+void decode(struct tEntrada entrada, struct tArvore *dados, char *argv[]) {
+    if (entrada.livro) {
+        extraiDadosLivro(entrada.livro, dados);
+        if (entrada.arqvChaves)
+            imprimeChaves(entrada.arqvChaves, dados);
+    }
+    else if (entrada.arqvChaves) {
+        transformaArquivoChaves(entrada.arqvChaves, dados);
+    }
+    if(! (decodificaMensagem(entrada.msgCodificada, entrada.msgDecodificada, dados))) {
+        fprintf(stderr, "Decodificacao abortada.");
+        fprintf(stderr, "Codigo da letra nao foi encontrado no arquivo de chaves.\n");
+    }
+}
+
+/* Funcao simples para tratamento das flags de entrada. */
+void analisaEntradas(struct tEntrada *entrada, int argc, char *argv[]) {
     int option;
-    int flag_d = 0, flag_e = 0;
-    char *value_b = NULL, *value_c = NULL, *value_i = NULL;
-    char *value_m = NULL, *value_o = NULL;
+
+    if (argc < 8) {
+        fprintf(stderr, "Quantidade de parametros insuficiente.\n");
+        erroEntrada(argv);
+    }
 
     opterr = 0;
     while ((option = getopt (argc, argv, "b:c:dei:m:o:")) != -1)
         switch (option) {
             case 'b':
-                value_b = optarg;
+                entrada->livro = optarg;
                 break;
             case 'c':
-                value_c = optarg;
+                entrada->arqvChaves = optarg;
                 break;
             case 'd':
-                if (flag_e == 0)
-                    flag_d = 1;
+                entrada->decode = 1;
+                if (entrada->encode) 
+                    conflitoEntrada(argv);
                 break;
             case 'e':
-                if (flag_d == 0)
-                    flag_e = 1;
+                entrada->encode = 1;
+                if (entrada->decode) 
+                    conflitoEntrada(argv);
                 break;
             case 'i':
-                value_i = optarg;
+                entrada->msgCodificada = optarg;
                 break;
             case 'm':
-                value_m = optarg;
+                entrada->msgOriginal = optarg;
                 break;
             case 'o':
-                value_o = optarg;
+                if (entrada->encode)
+                    entrada->msgCodificada = optarg;
+                else if (entrada->decode)
+                    entrada->msgDecodificada = optarg; 
                 break;
             default:
-                fprintf(stderr, "Usa direito ai, irmão\n");
-                exit(1);
+                fprintf(stderr, "Parametros de entrada incorretos.\n");
+                erroEntrada(argv);
         }
+}
+
+/* Marca inicialmente todas as entradas como vazio/zero */
+void inicializaEntradas(struct tEntrada *entrada) {
+    entrada->livro = NULL;
+    entrada->arqvChaves = NULL;
+    entrada->msgOriginal = NULL;
+    entrada->msgCodificada = NULL;
+    entrada->msgDecodificada = NULL;
+    entrada->encode = 0;
+    entrada->decode = 0;
+}
+
+int main(int argc, char *argv[]) {
+    srand(time(NULL));
+    setlocale(LC_ALL, "");
+    struct tArvore *dados;
+    struct tEntrada entrada;
+
+    analisaEntradas(&entrada, argc, argv);
 
     dados = criaArvore();
+    if (entrada.encode)
+        encode(entrada, dados, argv);
+    else if (entrada.decode)
+        decode(entrada, dados, argv);
 
-    if (flag_d == flag_e) {
-        fprintf(stderr, "Usa direito ai, irmão\n");
-        exit(1);
-    }
-
-    if (flag_e) {
-        if (value_b == NULL || value_o == NULL) {
-            fprintf(stderr, "Usa direito ai, irmão\n");
-            exit(1);
-        }
-        extraiDadosLivro(value_b, dados);
-        codificaMsg(value_m, value_o, dados);
-        if (value_c != NULL)
-            imprimeChaves(value_c, dados);
-    }
-    if (flag_d) {
-        if (value_b)
-            extraiDadosLivro(value_b, dados);
-        else if (value_c) {
-            transformaArquivoChaves(value_c, dados);
-        }
-    }
-
+    dados = destroiArvore(dados);
     return 0;
 }
