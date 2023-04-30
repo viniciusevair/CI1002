@@ -10,25 +10,36 @@ struct tNumArvore {
     struct tNumNo *ponteiro;
 };
 
-/* Cria uma árvore vazia. */
+/*
+ * Cria e aloca espaco para uma arvore vazia. A responsabilidade por desalocar a
+ * memoria utilizada e de quem chamou a funcao.
+ */
 struct tNumArvore *criaNumArvore();
 
-/* Destroi uma árvore e retorna NULL. */
+/*
+ * Desaloca recursivamente a memoria de todos os nos e em seguida a da arvore.
+ * sempre retorna NULL.
+ */
 struct tNumNo *destroiNumArvore(struct tNumArvore *tree);
 
+/* Adiciona uma nova chave na arvore */
 struct tNumNo *adicionaPos(struct tNumArvore *tree, struct tNumNo *no, int pos, int *controle);
 
+/* Busca e retorna um ponteiro para o no que contem o valor pos */
 struct tNumNo *buscaPos(struct tNumNo *no, int pos);
 
+/* Retorna aleatoriamente o valor da chave algum no da arvore. */
 int posAleatoria(struct tNumArvore *tree);
 
-/* Imprime os valores guardados na estrutura */
+/* 
+ * Funcao de debugging.
+ * Imprime para stdout em ordem decrescente os valores guardados na estrutura.
+ */
 void imprimeInverso(struct tNumNo *no);
 
+/*
+ * Guarda todos os dados da estrutura em um arquivo. A responsabilidade pela
+ * abertura e fechamento do arquivo de maneira correta e de quem chamou a
+ * funcao.
+ */
 void imprimeInversoEmArq(FILE *arq, struct tNumNo *no);
-
-int visitaSubNodo(struct tNumNo *no);
-
-int incrementaSubIterador(struct tNumArvore *tree);
-
-void inicializaSubIterador(struct tNumArvore *tree);

@@ -36,7 +36,8 @@ wchar_t removeAcento(wchar_t letra) {
 wchar_t pegaLetra(FILE *arq) {
     wchar_t letra;
 
-    letra = fgetwc(arq);
+    if(! (letra = fgetwc(arq)))
+        return L'\0';
     letra = towlower(letra);
     letra = removeAcento(letra);
 

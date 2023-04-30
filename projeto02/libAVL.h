@@ -53,7 +53,10 @@ void imprimeDadosEmArq(FILE *arq, struct tArvore *tree);
  * Busca e retorna uma posicao aleatoria entre as que estao guardadas no no
  * passado como argumento para a funcao.
  */
-int buscaDadoAleatorio(wchar_t chave, struct tArvore *tree);
+int buscaDadoAleatorio(wchar_t chave, struct tArvore *tree, int *pos);
 
-/* Imprime os valores guardados na estrutura. Funcao para debugging. */
+/* 
+ * Funcao de debugging.
+ * Imprime para stdout em ordem crescente os valores guardados na estrutura.
+ */
 void imprimeDados(struct tArvore *tree);

@@ -7,7 +7,7 @@
 struct tArvore *criaArvore() {
     struct tArvore *tree;
     if (! (tree = malloc(sizeof(struct tArvore)))) {
-        fprintf (stderr, "Erro ao alocar memória");
+        fprintf (stderr, "Erro ao alocar memoria para a arvore");
         exit (1);
     }
 
@@ -133,7 +133,7 @@ struct tNo *rotDireita (struct tArvore *tree, struct tNo *no) {
 struct tNo *criaNo(wchar_t chave) {
     struct tNo *no;
     if (! (no = malloc(sizeof(struct tNo)))) {
-        fprintf (stderr, "Erro ao alocar memória");
+        fprintf (stderr, "Erro ao alocar memoria para um no da arvore");
         exit (1);
     }
 
@@ -191,6 +191,8 @@ struct tNo *ajustaArvore(struct tArvore *tree, struct tNo *no, int *controle) {
  * Recebe uma chave e uma posicao. Busca o no da chave e adiciona a posicao
  * na subarvore do no. Se o no da chave nao estiver presente, cria o no e a sua
  * subarvore.
+ * Utiliza uma variavel de controle para saber se a arvore foi desbalanceada no
+ * processo de criacao de um novo no.
  */
 struct tNo *adicionaChave(struct tArvore *tree, struct tNo *no, wchar_t chave, int *controle, int pos) {
     if (no == NULL) {
@@ -271,10 +273,12 @@ void imprimeDadosEmArq(FILE *arq, struct tArvore *tree) {
     imprimeOrdemEmArq(arq, tree->raiz);
 }
 
-int buscaDadoAleatorio(wchar_t chave, struct tArvore *tree) {
+int buscaDadoAleatorio(wchar_t chave, struct tArvore *tree, int *pos) {
     struct tNo *aux;
 
-    aux = busca(tree->raiz, chave);
+    if(! (aux = busca(tree->raiz, chave)))
+        return 0;
+    (*pos) = posAleatoria(aux->subTree);
 
-    return posAleatoria(aux->subTree);
+    return 1;
 }

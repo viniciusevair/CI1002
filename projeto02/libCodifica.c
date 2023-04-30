@@ -22,16 +22,37 @@ void imprimeChaves(char *c, struct tArvore *dados) {
     fclose(cifra);
 }
 
-void codificaMsg(char *m, char *o, struct tArvore *dados) {
+int codificaLetra(wchar_t letra, int *codigo, struct tArvore *dados) {
+    if (letra == L'\n')
+        (*codigo) = -2;
+    else if (iswspace(letra))
+        (*codigo) = -1;
+    else
+        if(! (buscaDadoAleatorio(letra, dados, codigo)))
+            return 0;
+
+    return 1;
+}
+
+void escreveCodigo(FILE *codificada, int *primeiraLetra, int codigo) {
+    if (*primeiraLetra) {
+        fprintf(codificada, "%d", codigo);
+        (*primeiraLetra) = 0;
+    }
+    else
+        fprintf(codificada, " %d", codigo);
+}
+
+int codificaMsg(char *arqEntrada, char *arqSaida, struct tArvore *dados) {
     FILE *original, *codificada;
     wchar_t letra;
     int codigo, primeiraLetra;
 
-    if (! (original = fopen(m, "r"))) {
+    if (! (original = fopen(arqEntrada, "r"))) {
         perror("Erro ao abrir arquivo");
         exit(1);
     }
-    if (! (codificada = fopen(o, "w"))) {
+    if (! (codificada = fopen(arqSaida, "w"))) {
         perror("Erro ao abrir arquivo");
         exit(1);
     }
@@ -39,26 +60,22 @@ void codificaMsg(char *m, char *o, struct tArvore *dados) {
     letra = pegaLetra(original);
     primeiraLetra = 1;
     while (! feof(original)) {
-        if (letra == L'\n')
-            codigo = -2;
-        else if (iswspace(letra))
-            codigo = -1;
-        else
-            codigo = buscaDadoAleatorio(letra, dados);
+        if(! (codificaLetra(letra, &codigo, dados))) {
+            fprintf(stderr, "Codificacao de mensagem abortada.\n");
+            fprintf(stderr, "Nao foi possivel encontrar a chave desta letra.");
+            return 0;
+        }
 
         letra = pegaLetra(original);
         if (letra == WEOF)
             break;
 
-        if (primeiraLetra) {
-            fprintf(codificada, "%d", codigo);
-            primeiraLetra = 0;
-        }
-        else
-            fprintf(codificada, " %d", codigo);
+        escreveCodigo(codificada, &primeiraLetra, codigo);
     }
     fprintf(codificada, "\n");
 
     fclose(original);
     fclose(codificada);
+
+    return 1;
 }

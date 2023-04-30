@@ -6,7 +6,7 @@
 struct tNumArvore *criaNumArvore() {
     struct tNumArvore *tree;
     if (! (tree = malloc(sizeof(struct tNumArvore)))) {
-        fprintf (stderr, "Erro ao alocar memória");
+        fprintf (stderr, "Erro ao alocar memória para uma subarvore.");
         exit (1);
     }
 
@@ -16,6 +16,11 @@ struct tNumArvore *criaNumArvore() {
     return tree;
 }
 
+/*
+ * Funcao interna.
+ * Desaloca recursivamente os nos da arvore. Tambem desaloca a subarvore de cada
+ * no. Sempre retorna NULL.
+ */
 struct tNumNo *destroiNumGalhos(struct tNumNo *no) {
     if (no == NULL)
         return NULL;
@@ -37,6 +42,7 @@ struct tNumNo *destroiNumArvore(struct tNumArvore *tree) {
     return NULL;
 }
 
+/* Funcao interna. Busca e retorna o ponteiro para uma chave da arvore. */
 struct tNumNo *buscaPos(struct tNumNo *no, int pos) {
     if (no == NULL)
         return NULL;
@@ -47,6 +53,11 @@ struct tNumNo *buscaPos(struct tNumNo *no, int pos) {
     return buscaPos(no->dir, pos);
 }
 
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Reorganiza os nos da arvore fazendo uma rotacao para a esquerda.
+ * Diminui em 1 a altura da arvore no processo.
+ */
 struct tNumNo *rotacionaEsquerda (struct tNumArvore *tree, struct tNumNo *no) {
     struct tNumNo *aux;
     aux = no->dir;
@@ -68,6 +79,11 @@ struct tNumNo *rotacionaEsquerda (struct tNumArvore *tree, struct tNumNo *no) {
     return aux;
 }
 
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Reorganiza os nos da arvore fazendo uma rotacao para a direita.
+ * Diminui em 1 a altura da arvore no processo.
+ */
 struct tNumNo *rotacionaDireita(struct tNumArvore *tree, struct tNumNo *no) {
     struct tNumNo *aux;
     aux = no->esq;
@@ -89,10 +105,11 @@ struct tNumNo *rotacionaDireita(struct tNumArvore *tree, struct tNumNo *no) {
     return aux;
 }
 
+/* Cria e aloca memoria para um no. */
 struct tNumNo *criaNumNo(int pos) {
     struct tNumNo *no;
     if (! (no = malloc(sizeof(struct tNumNo)))) {
-        fprintf (stderr, "Erro ao alocar memória");
+        fprintf (stderr, "Erro ao alocar memória para um no da subarvore");
         exit (1);
     }
 
@@ -105,6 +122,7 @@ struct tNumNo *criaNumNo(int pos) {
     return no;
 }
 
+/* Calcula a altura da arvore. */
 int alturaNumNo(struct tNumNo *no) {
     int alturaEsq, alturaDir;
     if (no == NULL)
@@ -118,6 +136,11 @@ int alturaNumNo(struct tNumNo *no) {
     return alturaEsq + 1;
 }
 
+/*
+ * Funcao interna para gerenciamento de dados.
+ * Calcula e realiza as rotacoes necessarias para manter o balanceamento.
+ * Tambem atualiza a variavel de equilibrio dos nodos afetados.
+ */
 struct tNumNo *ajustaNumArvore(struct tNumArvore *tree, struct tNumNo *no, int *controle) {
     struct tNumNo *aux;
     if (no->equilibrio == -2) {
@@ -187,6 +210,21 @@ void imprimeInversoEmArq(FILE *arq, struct tNumNo *no) {
     imprimeInversoEmArq(arq, no->esq);
 }
 
+/*
+ * Retorna a quantidade de nos na arvore.
+ * Ou seja, a quantidade de dados atualmente guardados na estrutura.
+ */
+int quantidadeNos(struct tNumNo *no) {
+    if (no == NULL)
+        return 0;
+
+    return 1 + quantidadeNos(no->esq) + quantidadeNos(no->dir);
+}
+
+/*
+ * Funcao auxiliar da funcao de pos aleatoria.
+ * Caminha em preordem pela estrutura e retorna o no apos qtd movimentos.
+ */
 struct tNumNo *nodoAleatorio(struct tNumNo *no, int qtd, int *aux) {
     if (no == NULL)
         return NULL;
@@ -204,23 +242,16 @@ struct tNumNo *nodoAleatorio(struct tNumNo *no, int qtd, int *aux) {
     return NULL;
 }
 
-int quantidadeNos(struct tNumNo *no) {
-    if (no == NULL)
-        return 0;
-
-    return 1 + quantidadeNos(no->esq) + quantidadeNos(no->dir);
-}
-
 int posAleatoria(struct tNumArvore *tree) {
-    int qtd, aux, pos;
+    int qtdNos, aux, qtdMovimento;
     struct tNumNo *nodoAux;
 
-    qtd = quantidadeNos(tree->raiz);
+    qtdNos = quantidadeNos(tree->raiz);
     nodoAux = NULL;
     while (nodoAux == NULL) {
-        pos = rand() % qtd;
+        qtdMovimento = rand() % qtdNos;
         aux = 0;
-        nodoAux = nodoAleatorio(tree->raiz, pos, &aux);
+        nodoAux = nodoAleatorio(tree->raiz, qtdMovimento, &aux);
     }
 
     return nodoAux->pos;
