@@ -1,14 +1,11 @@
-Nome: Vinicius Evair da Silva
-GRR: 20221251
-
-Para este projeto fiz uso de um total de sete módulos:
-    - Beale
-    - libAVL
-    - libSubAVL
-    - libCodifica
-    - libDecodifica
-    - libCifra
-    - libTratamento
+Para este projeto fiz uso de um total de sete módulos:  
+    - Beale  
+    - libAVL  
+    - libSubAVL  
+    - libCodifica  
+    - libDecodifica  
+    - libCifra  
+    - libTratamento  
 
 Onde Beale é responsável pela função main, gerenciamento de entradas e
 tratamento de erros. Como código principal, ele é o responsável por juntar todas
