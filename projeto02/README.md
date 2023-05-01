@@ -22,9 +22,8 @@ implementam o código dos algoritmos da estrutura de dados AVL, ou seja, o
 projeto utiliza uma árvore binária de árvores binárias para o armazenamento de
 dados.
 A uso de árvores binárias AVL para este projeto foi uma escolha que se deu por
-dois motivos: 
-Primeiramente, para promover o diálogo entre as disciplinas de Programação 2 e
-Algoritmos e Estrutura de Dados 3; 
+dois motivos: Primeiramente, para promover o diálogo entre as disciplinas de
+Programação 2 e Algoritmos e Estrutura de Dados 3; 
 Em segundo lugar, por conta da eficiência do uso de estruturas de árvores.
 Apesar da inserção um pouco mais custosa que a de listas ligadas, o programa da
 cifra de Beale realiza muitas buscas, que são muito mais rápidas em arvores
@@ -47,3 +46,6 @@ a simples função de padronizar os caracteres com letras para minúsculas e sem
 acentos. Apesar de padronizar para a saida, ela utiliza wchar_t para guardar os
 caracteres, ou seja, faz com que o programa beale seja capaz de trabalhar não
 apenas com arquivos em ASCII mas também arquivos em UTF-8.
+
+Todas as leituras e escritas do programa em arquivos foram feitas caractere por
+caractere.
