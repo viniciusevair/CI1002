@@ -1,9 +1,14 @@
 #include <wchar.h>
 #include <wctype.h>
+
 #include "libTratamento.h"
 
-wchar_t removeAcento(wchar_t letra) {
-    switch (letra) {
+/*
+ * Remove os acentos das vogais comumente usadas na lingua portuguesa.
+ * Nao trata o casos de demais caracteres. 
+ */
+wchar_t removeAcento(wchar_t chave) {
+    switch (chave) {
         case L'á':
             return L'a';
         case L'à':
@@ -29,17 +34,17 @@ wchar_t removeAcento(wchar_t letra) {
         case L'ç':
             return L'c';
         default:
-            return letra;
+            return chave;
     }
 }
 
-wchar_t pegaLetra(FILE *arq) {
-    wchar_t letra;
+wchar_t pegaCaractere(FILE *arq) {
+    wchar_t chave;
 
-    if(! (letra = fgetwc(arq)))
+    if(! (chave = fgetwc(arq)))
         return L'\0';
-    letra = towlower(letra);
-    letra = removeAcento(letra);
+    chave = towlower(chave);
+    chave = removeAcento(chave);
 
-    return letra;
+    return chave;
 }

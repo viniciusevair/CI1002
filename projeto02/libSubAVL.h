@@ -1,4 +1,12 @@
+/*
+ * Biblioteca implementada pelo aluno Vinicius Evair da Silva para o projeto 02
+ * da disciplina Programacao II (CI1002).
+ * Biblioteca interna da libAVL.h. Contem todas as funcoes que lidam com o
+ * gerenciamento dos dados de posicoes.
+ */
+
 #include <stdio.h>
+
 struct tNumNo {
     int pos;
     int equilibrio;

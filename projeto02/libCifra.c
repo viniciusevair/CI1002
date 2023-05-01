@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <wctype.h>
-#include "libTratamento.h"
-#ifndef AVLTREE
+
 #include "libAVL.h"
-#endif /* ifndef AVLTREE */
+#include "libTratamento.h"
 
 
 /*
@@ -16,27 +15,27 @@
  * espacos, tabs e \n.
  */
 int criaChaves(FILE *livro, struct tArvore *dados) {
-    wchar_t letra;
+    wchar_t chave;
     int pos;
 
     pos = 0;
-    if((letra = pegaLetra(livro)) != L' ') {
-        guardaDado(dados, letra, pos);
+    if((chave = pegaCaractere(livro)) != L' ') {
+        guardaDado(dados, chave, pos);
         pos++;
     }
     while (! feof(livro)) {
-        if(iswspace(letra)) {
-            letra = pegaLetra(livro);
-            while (iswspace(letra))
-                if(! (letra = pegaLetra(livro)))
+        if(iswspace(chave)) {
+            chave = pegaCaractere(livro);
+            while (iswspace(chave))
+                if(! (chave = pegaCaractere(livro)))
                     return 0;
-            if (letra != WEOF) {
-                guardaDado(dados, letra, pos);
+            if (chave != EOF) {
+                guardaDado(dados, chave, pos);
                 pos++;
             }
         }
 
-        if(! (letra = pegaLetra(livro)))
+        if(! (chave = pegaCaractere(livro)))
             return 0;
     }
 
@@ -61,21 +60,21 @@ int extraiDadosLivro(char *arqLivro, struct tArvore *dados) {
 
 int transformaArquivoChaves(char *arqChaves, struct tArvore *dados) {
     FILE *arquivo;
-    wchar_t letra;
+    wchar_t chave;
     int codigo;
 
     if (! (arquivo = fopen(arqChaves, "r"))) {
         perror("Erro ao abrir arquivo");
-        exit(1);
+        return 0;
     }
 
-    letra = fgetc(arquivo);
+    chave = fgetc(arquivo);
     fgetc(arquivo);
     while (! feof(arquivo)) {
         while (fscanf(arquivo, "%d", &codigo) > 0) {
-            guardaDado(dados, letra, codigo);
+            guardaDado(dados, chave, codigo);
         }
-        letra = fgetc(arquivo);
+        chave = fgetc(arquivo);
         fgetc(arquivo);
     }
 

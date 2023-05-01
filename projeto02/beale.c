@@ -1,3 +1,8 @@
+/*
+ * Programa elaborado pelo aluno Vinicius Evair da Silva
+ * para o projeto 02 da disciplina Programacao II (CI1002).
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
@@ -35,40 +40,46 @@ void erroEntrada(char *argv[]) {
 
 /* Evitar o uso das flags -d e -e simultaneamente. */
 void conflitoEntrada(char *argv[]) {
-    fprintf(stderr, "Conflito de instrucoes. Escolha entre codificar ou decodificar.");
+    fprintf(stderr, "Conflito de instrucoes. Escolha entre codificar ou decodificar.\n");
     erroEntrada(argv);
 }
 
 /* Funcao para tratar a codificacao da mensagem. */
-void encode(struct tEntrada entrada, struct tArvore *dados, char *argv[]) {
+int encode(struct tEntrada entrada, struct tArvore *dados, char *argv[]) {
     if (entrada.livro == NULL || entrada.msgCodificada == NULL) {
         fprintf(stderr, "Quantidade de parametros insuficiente.\n");
         erroEntrada(argv);
     }
-    extraiDadosLivro(entrada.livro, dados);
-    codificaMsg(entrada.msgOriginal, entrada.msgCodificada, dados);
+    if(! (extraiDadosLivro(entrada.livro, dados)))
+        return 0;
+    if(! (codificaMsg(entrada.msgOriginal, entrada.msgCodificada, dados)))
+        return 0;
     if (entrada.arqvChaves)
         imprimeChaves(entrada.arqvChaves, dados);
+
+    return 1;
 }
 
 /*
  * Funcao para tratar a decodificacao da mensagem. Caso o usuario opte por usar
- * um livro cifra, mas ainda assim passe como argumento a flag -c, as chaves
- * geradas pelo livro serao salvas no arquivo de chaves.
+ * um livro cifra, mas ainda assim passe como argumento a flag -c, 
+ * o algoritmo optará pelo uso do livro.
  */
-void decode(struct tEntrada entrada, struct tArvore *dados, char *argv[]) {
+int decode(struct tEntrada entrada, struct tArvore *dados) {
     if (entrada.livro) {
         extraiDadosLivro(entrada.livro, dados);
-        if (entrada.arqvChaves)
-            imprimeChaves(entrada.arqvChaves, dados);
     }
     else if (entrada.arqvChaves) {
-        transformaArquivoChaves(entrada.arqvChaves, dados);
+        if(! (transformaArquivoChaves(entrada.arqvChaves, dados)))
+            return 0;
     }
     if(! (decodificaMensagem(entrada.msgCodificada, entrada.msgDecodificada, dados))) {
-        fprintf(stderr, "Decodificacao abortada.");
-        fprintf(stderr, "Codigo da letra nao foi encontrado no arquivo de chaves.\n");
+        fprintf(stderr, "Decodificacao abortada.\n");
+        fprintf(stderr, "Codigo da chave nao foi encontrado no arquivo de chaves.\n");
+        return 0;
     }
+
+    return 1;
 }
 
 /* Funcao simples para tratamento das flags de entrada. */
@@ -110,6 +121,10 @@ void analisaEntradas(struct tEntrada *entrada, int argc, char *argv[]) {
                     entrada->msgCodificada = optarg;
                 else if (entrada->decode)
                     entrada->msgDecodificada = optarg; 
+                else {
+                    fprintf(stderr, "A flag -o depende das flags -d ou -e antes.\n");
+                    erroEntrada(argv);
+                }
                 break;
             default:
                 fprintf(stderr, "Parametros de entrada incorretos.\n");
@@ -134,13 +149,18 @@ int main(int argc, char *argv[]) {
     struct tArvore *dados;
     struct tEntrada entrada;
 
+    inicializaEntradas(&entrada);
     analisaEntradas(&entrada, argc, argv);
 
     dados = criaArvore();
-    if (entrada.encode)
-        encode(entrada, dados, argv);
-    else if (entrada.decode)
-        decode(entrada, dados, argv);
+    if (entrada.encode) {
+        if(! (encode(entrada, dados, argv)))
+            return 1;
+    }
+    else if (entrada.decode) {
+        if(! (decode(entrada, dados)))
+            return 1;
+    }
 
     dados = destroiArvore(dados);
     return 0;

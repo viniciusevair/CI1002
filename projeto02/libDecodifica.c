@@ -4,28 +4,28 @@
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
-#include "libTratamento.h"
-#ifndef AVLTREE
+
 #include "libAVL.h"
-#endif /* ifndef AVLTREE */
+#include "libTratamento.h"
+#include "libDecodifica.h"
 
 /*
- * Funcao interna da biblioteca. Traduz o codigo para uma letra e a insere no
- * arquivo de saida. Retorna 1 em caso de sucesso e 0 caso nao encontre uma
- * chave com a letra para o codigo.
+ * Funcao interna da biblioteca. Traduz o codigo para um caractere e o insere no
+ * arquivo de saida. Retorna 1 em caso de sucesso e 0 caso nao encontre um
+ * caractere para o codigo passado.
  */
-int insereLetraTraduzida(FILE *saida, struct tArvore *dados, int codigo) {
-    wchar_t letra;
+int insereCaractereTraduzido(FILE *saida, struct tArvore *dados, int codigo) {
+    wchar_t chave;
 
     if (codigo == -1)
         fprintf(saida, " ");
     else if (codigo == -2)
         fprintf(saida, "\n");
     else {
-        if(! (letra = buscaNum(dados, codigo)))
+        if(! (chave = buscaNum(dados, codigo)))
             return 0;
 
-        fprintf(saida, "%lc", letra);
+        fprintf(saida, "%lc", chave);
     }
 
     return 1;
@@ -46,7 +46,7 @@ int decodificaMensagem(char *inpt, char *outpt, struct tArvore *dados) {
 
     fscanf(entrada, "%d", &codigo);
     while (! feof(entrada)) {
-        if(! (insereLetraTraduzida(saida, dados, codigo)))
+        if(! (insereCaractereTraduzido(saida, dados, codigo)))
             return 0;
         fscanf(entrada, "%d", &codigo);
     }

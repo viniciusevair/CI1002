@@ -1,9 +1,17 @@
+/*
+ * Biblioteca implementada pelo aluno Vinicius Evair da Silva para o projeto 02
+ * da disciplina Programacao II (CI1002).
+ * Nesta biblioteca encontram-se as funcoes que lidam com o gerenciamento da
+ * estrutura de dados em que as chaves sao guardadas. Utiliza da biblioteca
+ * interna libSubAVL para gerenciar os dados de posicoes de cada chave.
+ */
+
 #include <wchar.h>
 
 /*
  * Estrutura interna para gerenciamento dos dados guardados.
  * Cada no da arvore guarda uma outra arvore de posicoes de palavras que iniciam
- * com a letra chave do no.
+ * com o caractere chave do no.
  */
 struct tNo {
     wchar_t chave;

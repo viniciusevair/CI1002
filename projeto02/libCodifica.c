@@ -4,40 +4,46 @@
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
-#include "libTratamento.h"
-#ifndef AVLTREE
-#include "libAVL.h"
-#endif /* ifndef AVLTREE */
 
-void imprimeChaves(char *c, struct tArvore *dados) {
+#include "libAVL.h"
+#include "libTratamento.h"
+
+int imprimeChaves(char *arqChaves, struct tArvore *dados) {
     FILE *cifra;
 
-    if (! (cifra = fopen(c, "w"))) {
+    if (! (cifra = fopen(arqChaves, "w"))) {
         perror("Erro ao abrir arquivo");
-        exit(1);
+        return 0;
     }
 
     imprimeDadosEmArq(cifra, dados);
 
     fclose(cifra);
+    return 1;
 }
 
-int codificaLetra(wchar_t letra, int *codigo, struct tArvore *dados) {
-    if (letra == L'\n')
+/*
+ * Funcao auxiliar que transforma um caractere em algum codigo baseado no arquivo
+ * de chaves.
+ */
+int codificaCaractere(wchar_t chave, int *codigo, struct tArvore *dados) {
+    if (chave == L'\n')
         (*codigo) = -2;
-    else if (iswspace(letra))
+    else if (iswspace(chave))
         (*codigo) = -1;
     else
-        if(! (buscaDadoAleatorio(letra, dados, codigo)))
+        if(! (buscaDadoAleatorio(chave, dados, codigo)))
             return 0;
 
     return 1;
 }
 
-void escreveCodigo(FILE *codificada, int *primeiraLetra, int codigo) {
-    if (*primeiraLetra) {
+/* Funcao auxiliar para escrever o codigo no arquivo, evitando espacos
+ * desnecessarios. */
+void escreveCodigo(FILE *codificada, int *primeiroCaractere, int codigo) {
+    if (*primeiroCaractere) {
         fprintf(codificada, "%d", codigo);
-        (*primeiraLetra) = 0;
+        (*primeiroCaractere) = 0;
     }
     else
         fprintf(codificada, " %d", codigo);
@@ -45,8 +51,8 @@ void escreveCodigo(FILE *codificada, int *primeiraLetra, int codigo) {
 
 int codificaMsg(char *arqEntrada, char *arqSaida, struct tArvore *dados) {
     FILE *original, *codificada;
-    wchar_t letra;
-    int codigo, primeiraLetra;
+    wchar_t chave;
+    int codigo, primeiroCaractere;
 
     if (! (original = fopen(arqEntrada, "r"))) {
         perror("Erro ao abrir arquivo");
@@ -57,20 +63,20 @@ int codificaMsg(char *arqEntrada, char *arqSaida, struct tArvore *dados) {
         exit(1);
     }
 
-    letra = pegaLetra(original);
-    primeiraLetra = 1;
+    chave = pegaCaractere(original);
+    primeiroCaractere = 1;
     while (! feof(original)) {
-        if(! (codificaLetra(letra, &codigo, dados))) {
+        if(! (codificaCaractere(chave, &codigo, dados))) {
             fprintf(stderr, "Codificacao de mensagem abortada.\n");
-            fprintf(stderr, "Nao foi possivel encontrar a chave desta letra.");
+            fprintf(stderr, "Nao foi possivel encontrar a chave do caractere \"%lc\".\n", chave);
             return 0;
         }
 
-        letra = pegaLetra(original);
-        if (letra == WEOF)
+        chave = pegaCaractere(original);
+        if (chave == EOF)
             break;
 
-        escreveCodigo(codificada, &primeiraLetra, codigo);
+        escreveCodigo(codificada, &primeiroCaractere, codigo);
     }
     fprintf(codificada, "\n");
 

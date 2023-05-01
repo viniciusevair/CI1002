@@ -1,6 +1,13 @@
 /*
+ * Biblioteca implementada pelo aluno Vinicius Evair da Silva para o projeto 02
+ * da disciplina Programacao II (CI1002).
+ * Biblioteca com as funcoes que guardam a entrada na estrutura de dados.
+ */
+
+
+/*
  * Guarda a posicao de cada palavra do texto em uma estrutura de dados do tipo
- * arvore AVL, cuja chave de cada no e a letra inicial da palavra.
+ * arvore AVL, cuja chave de cada no e o caractere inicial da palavra.
  */
 int extraiDadosLivro(char *arqLivro, struct tArvore *dados);
 
