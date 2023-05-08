@@ -3,5 +3,7 @@ aulas
 *.txt
 *.bin
 *.dat
+*.o
 makefile
 Session.vim
+altProjeto02
