@@ -21,7 +21,7 @@ void erroEntrada(char *argv[]) {
 int main(int argc, char *argv[]) {
     enum modo_t modo = NOP;
     FILE *arq, *memb;
-    char reg;
+    char reg = 'b';
     int opt;
     int archivePosition = 2;
     char *target;
@@ -61,14 +61,8 @@ int main(int argc, char *argv[]) {
     archive = strdup(argv[archivePosition]);
 
     //testando insert
-    arq = fopen(archive, "w");
-    for (int i = archivePosition + 1; i < argc; i++) {
-        memb = fopen(argv[i], "r");
-        while(! feof(memb)) {
-            fread(&reg, sizeof(char), 1, memb);
-            fwrite(&reg, sizeof(char), 1, arq);
-        }
-    }
+    arq = fopen(archive, "w+");
+    fwrite(&reg, sizeof(char), 1, arq);
 
     fclose(arq);
     free(archive);
