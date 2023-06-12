@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     int opt;
     int archivePosition = 2;
     char *target;
-    char *archive;
+    char *filename;
 
     while ((opt = getopt(argc, argv, "iam:xrch")) != -1) {
         switch (opt) {
@@ -58,13 +58,13 @@ int main(int argc, char *argv[]) {
     }
 
     //TIRAR DA MAIN DEPOIS ===================================================
-    archive = strdup(argv[archivePosition]);
+    filename = strdup(argv[archivePosition]);
 
     //testando insert
-    arq = fopen(archive, "w+");
+    arq = fopen(filename, "w+");
     fwrite(&reg, sizeof(char), 1, arq);
 
     fclose(arq);
-    free(archive);
+    free(filename);
     return 0;
 }
