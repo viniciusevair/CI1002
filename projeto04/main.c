@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-enum modo_t { NOP, INSERT, APPEND, MOVE, EXTRACT, REMOVE, LIST, HELP };
+enum modo_t {NOP, INSERIR, ATUALIZAR, MOVER, EXTRAIR, REMOVER, LISTAR, AJUDA};
 
 void erroEntrada(char *argv[]) {
     fprintf(stderr, "Uso:\n");
@@ -30,27 +30,27 @@ int main(int argc, char *argv[]) {
     while ((opt = getopt(argc, argv, "iam:xrch")) != -1) {
         switch (opt) {
             case 'i':
-                modo = INSERT;
+                modo = INSERIR;
                 break;
             case 'a':
-                modo = APPEND;
+                modo = ATUALIZAR;
                 break;
             case 'm':
-                modo = MOVE;
+                modo = MOVER;
                 archivePosition = 3;
                 target = strdup(optarg);
                 break;
             case 'x':
-                modo = EXTRACT;
+                modo = EXTRAIR;
                 break;
             case 'r':
-                modo = REMOVE;
+                modo = REMOVER;
                 break;
             case 'c':
-                modo = LIST;
+                modo = LISTAR;
                 break;
             case 'h':
-                modo = HELP;
+                modo = AJUDA;
                 break;
             default:
                 erroEntrada(argv);

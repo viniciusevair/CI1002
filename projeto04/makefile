@@ -1,23 +1,23 @@
 CFLAGS = -Wall -g
 LDFLAGS = -lm
-programName = vina++
+PROGRAM_NAME = vina++
 
 CC = gcc
 
 # arquivos-objeto
-objects = $(programName).o 
+OBJECTS = main.o
 
-all: $(programName)
+all: $(PROGRAM_NAME)
 
-$(programName): $(objects)
-	$(CC) -o $(programName) $(objects) $(LDFLAGS)
+$(PROGRAM_NAME): $(OBJECTS)
+	$(CC) -o $(PROGRAM_NAME) $(OBJECTS) $(LDFLAGS)
 
-$(programName).o: $(programName).c
-	$(CC) -c $(CFLAGS) $(programName).c
+main.o: main.c
+	$(CC) -c $(CFLAGS) main.c
 
 clean:
-	rm -f $(objects)
+	rm -f $(OBJECTS)
 
 purge: clean
-	rm -f $(programName)
+	rm -f $(PROGRAM_NAME)
 
