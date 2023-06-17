@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <sys/stat.h>
 
 
@@ -38,36 +39,28 @@ FILE* abre_membro(char *filename) {
 struct file_header_t* pega_dados(char *filename) {
     struct file_header_t *file_data;
     char *aux;
-    struct stat *data_buffer;
+    struct stat data_buffer;
 
     if(! (file_data = malloc(sizeof(struct file_header_t)))) {
         fprintf(stderr, "Erro ao alocar memória");
         return NULL;
     }
-    if(! (data_buffer = malloc(sizeof(struct stat)))) {
-        fprintf(stderr, "Erro ao alocar memória");
-        return NULL;
-    }
 
-    stat(filename, data_buffer);
+    stat(filename, &data_buffer);
     aux = strrchr(filename, '/');
-    if(! aux)
+    if(! aux) {
         aux = strdup(filename);
-    else
+    } else {
         aux = strdup(aux + 1);
-
+    }
     strcpy(file_data->filename, aux);
-    file_data->modif_date = 8;
-    file_data->permissions = 1;
-    file_data->group_id = 7;
-    file_data->archive_position = 90;
-    file_data->user_id = 666;
-    file_data->size = 30;
-    strcpy(file_data->filepath, "oi");
+    strcpy(file_data->filepath, dirname(filename));
 
-    free(data_buffer);
+    file_data->modif_date = data_buffer.st_mtim.tv_sec;
+    file_data->permissions = data_buffer.st_mode;
+    file_data->group_id = data_buffer.st_gid;
+    file_data->user_id = data_buffer.st_uid;
+    file_data->size = data_buffer.st_size;
+
     return file_data;
 }
-
-//TODO:
-/// Pegar dados dos arquivos;
