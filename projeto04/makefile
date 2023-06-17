@@ -5,11 +5,11 @@ PROGRAM_NAME = vina++
 CC = gcc
 
 # arquivos-objeto
-OBJECTS = libArquivos.o
+OBJECTS = libArquivos.o libLista.o
 
 all: $(PROGRAM_NAME)
 
-test: test.o libArquivos.o
+test: test.o libArquivos.o libLista.o
 	$(CC) -o teste test.o $(OBJECTS) $(LDFLAGS)
 
 test.o: test.c
@@ -23,6 +23,9 @@ main.o: main.c
 
 libArquivos.o: libArquivos.c
 	$(CC) -c $(CFLAGS) libArquivos.c
+
+libLista.o: libLista.c
+	$(CC) -c $(CFLAGS) libLista.c
 
 clean:
 	rm -f $(OBJECTS)
