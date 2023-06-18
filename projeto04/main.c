@@ -8,10 +8,12 @@
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
+#include "libArquivos.h"
+#include "libVina.h"
 
 enum modo_t {NOP, INSERIR, ATUALIZAR, MOVER, EXTRAIR, REMOVER, LISTAR, AJUDA};
 
-void erroEntrada(char *argv[]) {
+void erro_entrada(char *argv[]) {
     fprintf(stderr, "Uso:\n");
     fprintf(stderr, "%s [-i | -a | -m <target> | -x | -r | -c | -h]", argv[0]);
     fprintf(stderr, " <archive> [membro1 membro2 ...]\n");
@@ -20,10 +22,9 @@ void erroEntrada(char *argv[]) {
 
 int main(int argc, char *argv[]) {
     enum modo_t modo = NOP;
-    FILE *arq, *memb;
-    char reg = 'b';
+    FILE *arq;
     int opt;
-    int archivePosition = 2;
+    int archive_position = 2;
     char *target;
     char *filename;
 
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 'm':
                 modo = MOVER;
-                archivePosition = 3;
+                archive_position = 3;
                 target = strdup(optarg);
                 break;
             case 'x':
@@ -53,16 +54,21 @@ int main(int argc, char *argv[]) {
                 modo = AJUDA;
                 break;
             default:
-                erroEntrada(argv);
+                erro_entrada(argv);
         }		
     }
 
     //TIRAR DA MAIN DEPOIS ===================================================
-    filename = strdup(argv[archivePosition]);
+    filename = strdup(argv[archive_position]);
 
-    //testando insert
-    arq = fopen(filename, "w+");
-    fwrite(&reg, sizeof(char), 1, arq);
+    arq = open_archiver(filename);
+    if (modo == INSERIR) {
+        insert_file(arq, argv[3]);
+    } else if (modo == LISTAR) {
+        list_files(arq);
+    } else if (modo == AJUDA) {
+        help_utility(argv[0]);
+    }
 
     fclose(arq);
     free(filename);

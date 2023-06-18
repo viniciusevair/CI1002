@@ -16,7 +16,7 @@ struct list_t *make_list() {
     return list;
 }
 
-struct list_t *destroi_lista(struct list_t *list) {
+struct list_t *delete_list(struct list_t *list) {
     while(list->head != NULL) {
         struct list_node_t *aux = list->head;
         list->head = list->head->next;
@@ -27,6 +27,13 @@ struct list_t *destroi_lista(struct list_t *list) {
     free(list);    
 
     return NULL;
+}
+
+int is_empty(struct list_t *list) {
+    if(list->head == NULL && list->tail == NULL)
+        return 1;
+
+    return 0;
 }
 
 void update_order(struct list_t *list, struct list_node_t *node) {
@@ -127,7 +134,7 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
     return 1;
 }
 
-int remove_arquivo(struct list_t *list, char *filename) {
+int remove_element(struct list_t *list, char *filename) {
     struct list_node_t *current, *aux;
 
     if(strcmp(list->head->file->filename, filename) == 0) {
@@ -157,17 +164,20 @@ int remove_arquivo(struct list_t *list, char *filename) {
     return 0;
 }
 
-void ler_elementos_lista(struct list_t *list) {
+void read_list(struct list_t *list) {
     struct list_node_t *current = list->head;
 
+    if(is_empty(list))
+        printf("A lista está vazia.\n");
+
     while (current != NULL) {
-        escreve_info_arquivo(current->file);
+        write_file_data(current->file);
 
         current = current->next;
     }
 }
 
-struct file_header_t *obtem_primeiro_lista(struct list_t *list) {
+struct file_header_t *get_first_element(struct list_t *list) {
     struct list_node_t *temp_node;
     struct file_header_t *temp_data;
 
@@ -176,8 +186,10 @@ struct file_header_t *obtem_primeiro_lista(struct list_t *list) {
 
     temp_node = list->head;
     list->head = list->head->next;
-    (list->head->file->order)--;
-    update_order(list, list->head);
+    if(list->head != NULL) {
+        (list->head->file->order)--;
+        update_order(list, list->head);
+    }
     temp_node->next = NULL;
 
     temp_data = temp_node->file;
