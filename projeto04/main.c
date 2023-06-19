@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     enum modo_t modo = NOP;
     FILE *arq;
     int opt;
-    int archive_position = 2;
+    int archive_arg_position = 2;
     char *target;
     char *filename;
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 'm':
                 modo = MOVER;
-                archive_position = 3;
+                archive_arg_position = 3;
                 target = strdup(optarg);
                 break;
             case 'x':
@@ -51,23 +51,21 @@ int main(int argc, char *argv[]) {
                 modo = LISTAR;
                 break;
             case 'h':
-                modo = AJUDA;
-                break;
+                help_utility(argv[0]);
+                return 0;
             default:
                 erro_entrada(argv);
         }		
     }
 
     //TIRAR DA MAIN DEPOIS ===================================================
-    filename = strdup(argv[archive_position]);
+    filename = strdup(argv[archive_arg_position]);
 
     arq = open_archiver(filename);
     if (modo == INSERIR) {
-        insert_file(arq, argv[3]);
+        insert_operation(arq, argv, argc);
     } else if (modo == LISTAR) {
         list_files(arq);
-    } else if (modo == AJUDA) {
-        help_utility(argv[0]);
     }
 
     fclose(arq);
