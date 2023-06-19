@@ -30,10 +30,7 @@ struct list_t *delete_list(struct list_t *list) {
 }
 
 int is_empty(struct list_t *list) {
-    if(list->head == NULL && list->tail == NULL)
-        return 1;
-
-    return 0;
+    return (list->head == NULL);
 }
 
 void update_order(struct list_t *list, struct list_node_t *node) {
@@ -43,6 +40,38 @@ void update_order(struct list_t *list, struct list_node_t *node) {
             node = node->next;
         }
     }
+}
+
+struct list_node_t *seek_element_node(struct list_t *list, char *filename) {
+    struct list_node_t *current = list->head;
+
+    if(is_empty(list))
+        return NULL;
+
+    while (current != NULL) {
+        if(strcmp(current->file->filename, filename) == 0)
+           return current;
+
+        current = current->next;
+    }
+
+    return NULL;
+}
+
+time_t get_element_modif_time(struct list_t *list, char *filename) {
+    struct list_node_t *aux;
+    aux = seek_element_node(list, filename);
+
+    if(aux != NULL)
+        return aux->file->modif_date;
+
+    return -1;
+}
+
+int is_element_present(struct list_t *list, char *filename) {
+    if(seek_element_node(list, filename))
+        return 1;
+    return 0;
 }
 
 int add_list_head(struct list_t *list, struct file_header_t *file_data) {
@@ -134,18 +163,15 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
     return 1;
 }
 
-int remove_element(struct list_t *list, char *filename) {
+struct file_header_t *remove_element(struct list_t *list, char *filename) {
     struct list_node_t *current, *aux;
+    struct file_header_t *temp_data;
+
+    if(is_empty(list))
+        return NULL;
 
     if(strcmp(list->head->file->filename, filename) == 0) {
-        aux = list->head;
-        list->head = list->head->next;
-        free(aux->file);
-        free(aux);
-        (list->head->file->order)--;
-        update_order(list, list->head);
-        
-        return 1;
+        return get_first_element(list);
     }
 
     current = list->head;
@@ -153,15 +179,17 @@ int remove_element(struct list_t *list, char *filename) {
         current = current->next;
 
     if(strcmp(current->next->file->filename, filename) == 0) {
+        if(current->next == list->tail)
+            list->tail = current;
         aux = current->next;
         current->next = current->next->next;
-        free(aux->file);
+        temp_data = aux->file;
         free(aux);
         update_order(list, current);
-        return 1;
+        return temp_data;
     }
 
-    return 0;
+    return NULL;
 }
 
 void read_list(struct list_t *list) {
