@@ -5,6 +5,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
@@ -30,12 +31,45 @@ FILE* open_archiver(char *filename) {
     return archive;
 }
 
+int make_directories(char *filename, mode_t mode) {
+    char *modifiable_path = strdup(filename);
+    char filepath[FILENAME_MAX] = "./";
+    char *token = strtok(modifiable_path, "/");
+
+    while (token != NULL) {
+        strcat(filepath, token);
+        if(mkdir(filepath, mode) != 0) {
+            if(errno == EEXIST)
+                continue;
+            return 0;
+        }
+
+        strcat(filepath, "/");
+        token = strtok(NULL, "/");
+    }
+
+    return 1;
+}
+
+void verify_directories(char *filename) {
+    char *path_separator = strrchr(filename, '/');
+    if(path_separator != NULL) {
+        *path_separator = 0;
+        if(! make_directories(filename, S_IRWXU))
+            fprintf(stderr, "Erro ao criar diretório %s\n", filename);
+        *path_separator = '/';
+    }
+}
+
 FILE *make_member(char *filename) {
     FILE *member;
 
     member = fopen(filename, "wb");
     if(member == NULL) {
-        fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
+        verify_directories(filename);
+        member = fopen(filename, "wb");
+        if(member == NULL)
+            fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
     }
 
     return member;
