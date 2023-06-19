@@ -5,13 +5,13 @@
 
 void insert_operation(FILE *archiver, char **argv, int members_quantity);
 
-void update_file(FILE *archiver, char *filename);
+void update_operation(FILE *archiver, char **argv, int members_quantity);
 
-void move_file(FILE *archiver, char *filename);
+void move_operation(FILE *archiver, char **argv, int members_quantity);
 
-void extract_file(FILE *archiver, char *filename);
+void extract_operation(FILE *archiver, char **argv, int members_quantity);
 
-void remove_file(FILE *archiver, char *filename);
+void remove_operation(FILE *archiver, char **argv, int members_quantity);
 
 void list_files(FILE *archiver);
 
