@@ -30,19 +30,29 @@ FILE* open_archiver(char *filename) {
     return archive;
 }
 
+FILE *make_member(char *filename) {
+    FILE *member;
+
+    member = fopen(filename, "wb");
+    if(member == NULL) {
+        fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
+    }
+
+    return member;
+}
+
 FILE* open_member(char *filename) {
-    FILE *membro;
+    FILE *member;
 
-    membro = fopen(filename, "r");
-    if(membro == NULL)
-        fprintf(stderr, "Erro ao abrir arquivo %s.", filename);
+    member = fopen(filename, "r");
+    if(member == NULL)
+        fprintf(stderr, "Erro ao abrir arquivo %s\n", filename);
 
-    return membro;
+    return member;
 }
 
 struct file_header_t* get_data(char *filename) {
     struct file_header_t *file_data;
-    char *aux;
     struct stat data_buffer;
 
     if(! (file_data = malloc(sizeof(struct file_header_t)))) {
@@ -51,14 +61,7 @@ struct file_header_t* get_data(char *filename) {
     }
 
     stat(filename, &data_buffer);
-    aux = strrchr(filename, '/');
-    if(! aux) {
-        aux = strdup(filename);
-    } else {
-        aux = strdup(aux + 1);
-    }
-    strcpy(file_data->filename, aux);
-    strcpy(file_data->filepath, dirname(filename));
+    strcpy(file_data->filename, filename);
 
     file_data->modif_date = data_buffer.st_mtim.tv_sec;
     file_data->mode = data_buffer.st_mode;

@@ -5,12 +5,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define NAME_MAX 255
-
 struct file_header_t {
-    char filename[NAME_MAX];
+    char filename[FILENAME_MAX];
     size_t order;
-    char filepath[FILENAME_MAX];
     uid_t user_id;
     gid_t group_id;
     mode_t mode;
@@ -19,9 +16,10 @@ struct file_header_t {
     size_t archive_position;
 };
 
-FILE* open_archiver(char *filename);
-FILE* open_member(char *filename);
-struct file_header_t* get_data(char *filename);
+FILE *open_archiver(char *filename);
+FILE *open_member(char *filename);
+FILE *make_member(char *filename);
+struct file_header_t *get_data(char *filename);
 void write_file_data(struct file_header_t *file);
 
 #endif
