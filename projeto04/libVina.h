@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-void insert_file(FILE *archiver, char *filename);
+void insert_operation(FILE *archiver, char **argv, int members_quantity);
 
 void update_file(FILE *archiver, char *filename);
 
