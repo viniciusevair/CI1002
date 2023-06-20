@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <utime.h>
+#include <sys/stat.h>
 #include "libArquivos.h"
 #include "libLista.h"
 #include "libVina.h"
@@ -50,7 +53,6 @@ void update_operation(FILE *archive, char **argv, int members_quantity) {
 /* -------- Insert -------- */
 void insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *file_data = get_data(filename);
-    printf("TESTE: %s\n", filename);
     FILE *member = open_member(filename);
     size_t file_size = file_data->size;
     file_data->archive_position = *archive_pointer;
@@ -98,6 +100,7 @@ void move_file(FILE *archive, char **argv, int members_quantity) {
 void extract_file(FILE *archive, struct file_header_t *file_data) {
     FILE *member = make_member(file_data->filename);
     size_t file_size = file_data->size;
+    struct utimbuf original_time;
 
     if(member == NULL)
         return;
@@ -106,6 +109,11 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
     process_file(archive, member, file_size);
 
     fclose(member);
+
+    original_time.modtime = file_data->modif_date;
+    original_time.actime = time(NULL);
+    chmod(file_data->filename, file_data->mode);
+    utime(file_data->filename, &original_time);
 }
 
 void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {

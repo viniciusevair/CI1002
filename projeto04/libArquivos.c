@@ -33,18 +33,20 @@ FILE* open_archiver(char *filename) {
 
 int make_directories(char *filename, mode_t mode) {
     char *modifiable_path = strdup(filename);
-    char filepath[FILENAME_MAX] = "./";
+    char filepath[FILENAME_MAX] = ".";
     char *token = strtok(modifiable_path, "/");
 
     while (token != NULL) {
+        strcat(filepath, "/");
         strcat(filepath, token);
         if(mkdir(filepath, mode) != 0) {
-            if(errno == EEXIST)
+            if(errno == EEXIST) {
+                token = strtok(NULL, "/");
                 continue;
+            }
             return 0;
         }
 
-        strcat(filepath, "/");
         token = strtok(NULL, "/");
     }
 
@@ -64,9 +66,9 @@ void verify_directories(char *filename) {
 FILE *make_member(char *filename) {
     FILE *member;
 
+    verify_directories(filename);
     member = fopen(filename, "wb");
     if(member == NULL) {
-        verify_directories(filename);
         member = fopen(filename, "wb");
         if(member == NULL)
             fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
