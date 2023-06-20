@@ -143,10 +143,19 @@ void extract_operation(FILE *archive, char **argv, int members_quantity) {
 
         if(members_quantity == 3) {
             extract_all(archive, list, archive_pointer);
+        } else if (members_quantity > 3) {
+            for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
+                struct file_header_t *file = seek_element(list, argv[i]);
+                if(file != NULL)
+                    extract_file(archive, file);
+                else
+                    fprintf(stderr, "Não foi possível extrair o arquivo %s.\n", argv[i]);
+            }
         }
 
         list = delete_list(list);
     } else {
+        fprintf(stderr, "Não foi possível fazer a leitura do arquivo %s.\n", argv[2]);
     }
 }
 
