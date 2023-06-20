@@ -42,7 +42,7 @@ void update_order(struct list_t *list, struct list_node_t *node) {
     }
 }
 
-struct list_node_t *seek_element_node(struct list_t *list, char *filename) {
+struct file_header_t *seek_element(struct list_t *list, char *filename) {
     struct list_node_t *current = list->head;
 
     if(is_empty(list))
@@ -50,7 +50,7 @@ struct list_node_t *seek_element_node(struct list_t *list, char *filename) {
 
     while (current != NULL) {
         if(strcmp(current->file->filename, filename) == 0)
-           return current;
+           return current->file;
 
         current = current->next;
     }
@@ -59,17 +59,17 @@ struct list_node_t *seek_element_node(struct list_t *list, char *filename) {
 }
 
 time_t get_element_modif_time(struct list_t *list, char *filename) {
-    struct list_node_t *aux;
-    aux = seek_element_node(list, filename);
+    struct file_header_t *aux;
+    aux = seek_element(list, filename);
 
     if(aux != NULL)
-        return aux->file->modif_date;
+        return aux->modif_date;
 
     return -1;
 }
 
 int is_element_present(struct list_t *list, char *filename) {
-    if(seek_element_node(list, filename))
+    if(seek_element(list, filename))
         return 1;
     return 0;
 }
