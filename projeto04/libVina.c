@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <utime.h>
 #include <sys/stat.h>
@@ -47,24 +48,34 @@ void process_file(FILE *input, FILE *output, size_t file_size) {
 }
 
 /* -------- Update -------- */
+//int update_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+//}
+
 void update_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Insert -------- */
-void insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *file_data = get_data(filename);
-    FILE *member = open_member(filename);
-    size_t file_size = file_data->size;
-    file_data->archive_position = *archive_pointer;
+    strcpy(file_data->filename, relativize_filepath(filename));
+    if(is_element_present(list, file_data->filename))
+        return 0;
+        //return update_file(archive, list, filename, archive_pointer);
 
+    FILE *member = open_member(filename);
     if(member == NULL)
-        return;
+        return 0;
+
+    size_t file_size = file_data->size;
 
     process_file(member, archive, file_size);
+    file_data->archive_position = *archive_pointer;
 
     (*archive_pointer) += file_data->size;
     add_list_tail(list, file_data);
     fclose(member);
+
+    return 1;
 }
 
 void insert_operation(FILE *archive, char **argv, int members_quantity) {
@@ -80,10 +91,8 @@ void insert_operation(FILE *archive, char **argv, int members_quantity) {
     }
 
     for (int i = ARGUMENT_OFFSET; i < members_quantity; i++)
-        if(! is_element_present(list, argv[i]))
-            insert_file(archive, list, argv[i], &archive_pointer);
-    //TODO: fazer o caso de o arquivo já estar lá dentro. Acho que é mais fácil
-    //com a remoção já feita depois.
+        if(! insert_file(archive, list, argv[i], &archive_pointer))
+            fprintf(stderr, "Não foi possível incluir o arquivo %s\n", argv[i]);
 
     fseek(archive, 0, SEEK_SET);
     fwrite(&archive_pointer, sizeof(size_t), 1, archive);
