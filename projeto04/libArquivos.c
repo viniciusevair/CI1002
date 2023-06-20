@@ -31,6 +31,57 @@ FILE* open_archiver(char *filename) {
     return archive;
 }
 
+int single_name(char *filename) {
+    int count = 0;
+    for(int i = 0; i < strlen(filename); i++) {
+        if(filename[i] == '/')
+            count++;
+        if(count > 1)
+            return 0;
+    }
+
+    return 1;
+}
+
+char *relativize_filepath(char *filename) {
+    char *new_filename = strdup(filename);
+    char new_filepath[FILENAME_MAX] = ".";
+    char current_directory[3] = "./";
+    char parent_directory[4] = "../";
+    char home_directory[3] = "~/";
+
+    char *current_dir_ptr = strstr(new_filename, current_directory);
+    char *parent_dir_ptr = strstr(new_filename, parent_directory);
+    char *home_dir_ptr = strstr(new_filename, home_directory);
+
+    // Verifica se o arquivo começa com um indicador de diretório corrente.
+    if(current_dir_ptr != NULL && strncmp(current_dir_ptr, new_filename, 3) == 0) {
+        if(single_name(new_filename))
+            strcpy(new_filename, strrchr(new_filename, '/') + 1);
+        return new_filename;
+    }
+    // Verifica se o arquivo começa com um indicador de diretório pai.
+    if(parent_dir_ptr != NULL && strncmp(parent_dir_ptr, new_filename, 4) == 0)
+        return new_filename;
+    // Verifica se o arquivo começa com um indicador de diretório home.
+    if(home_dir_ptr != NULL && strncmp(home_dir_ptr, new_filename, 3) == 0)
+        return new_filename;
+
+    /*
+     * Verifica se o nome do arquivo contém um caminho absoluto ou diretório
+     * corrente, mas sem indicador no inicio.
+     */
+    if(new_filename[0] != '/')
+        strcat(new_filepath, "/");
+
+    if(strrchr(new_filename, '/')) {        
+        strcat(new_filepath, new_filename); 
+        strcpy(new_filename, new_filepath); 
+    }
+
+    return new_filename;
+}
+
 int make_directories(char *filename, mode_t mode) {
     char *modifiable_path = strdup(filename);
     char filepath[FILENAME_MAX] = ".";

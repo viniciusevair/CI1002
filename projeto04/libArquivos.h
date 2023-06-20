@@ -20,6 +20,7 @@ FILE *open_archiver(char *filename);
 FILE *open_member(char *filename);
 FILE *make_member(char *filename);
 struct file_header_t *get_data(char *filename);
+char *relativize_filepath(char *filename);
 void write_file_data(struct file_header_t *file);
 
 #endif
