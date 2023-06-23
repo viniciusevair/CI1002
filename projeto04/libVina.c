@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <utime.h>
@@ -46,6 +47,21 @@ void process_file(FILE *input, FILE *output, size_t file_size) {
         file_size -= bytes_read;
     }
 }
+
+void shift_bytes_left(FILE *archive, long writing_point, long reading_point) {
+    size_t bytes_read = BUFFER_SIZE;
+    char buffer[BUFFER_SIZE];
+
+    while (bytes_read >= BUFFER_SIZE) {
+        fseek(archive, reading_point, SEEK_SET);
+        bytes_read = fread(buffer, 1, BUFFER_SIZE, archive);
+        fseek(archive, writing_point, SEEK_SET);
+        fwrite(buffer, 1, bytes_read, archive);
+        reading_point += bytes_read;
+        writing_point += bytes_read;
+    }
+}
+
 
 /* -------- Update -------- */
 //int update_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
@@ -111,6 +127,10 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
     size_t file_size = file_data->size;
     struct utimbuf original_time;
 
+    /*
+     * A função make_member já tratou o erro. Basta agora retornar para avançar
+     * para a próxima iteração do laço (i. e., próximo arquivo a se extrair).
+     */
     if(member == NULL)
         return;
 
@@ -134,7 +154,7 @@ void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
     }
 }
 
-void extract_operation(FILE *archive, char **argv, int members_quantity) {
+int extract_operation(FILE *archive, char **argv, int members_quantity) {
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
@@ -149,18 +169,63 @@ void extract_operation(FILE *archive, char **argv, int members_quantity) {
                 if(file != NULL)
                     extract_file(archive, file);
                 else
-                    fprintf(stderr, "Não foi possível extrair o arquivo %s.\n", argv[i]);
+                    fprintf(stderr, "Não foi possível extrair o arquivo \"%s\".\n", argv[i]);
             }
         }
 
         list = delete_list(list);
     } else {
         fprintf(stderr, "Não foi possível fazer a leitura do arquivo %s.\n", argv[2]);
+        return 0;
     }
+
+    return 1;
 }
 
 /* -------- Remove -------- */
+void delete_file(FILE *archive, struct file_header_t *file) {
+    long writing_point, reading_point;
+
+    fseek(archive, file->archive_position, SEEK_SET);
+    writing_point = ftell(archive);
+    reading_point = writing_point + file->size;
+
+    shift_bytes_left(archive, writing_point, reading_point);
+}
+
 void remove_operation(FILE *archive, char **argv, int members_quantity) {
+    size_t archive_pointer;
+
+    if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        struct list_t *list = make_list();
+        load_list(archive, list, archive_pointer);
+
+        if(members_quantity == 3) {
+            fprintf(stderr, "Não foi especificado nenhum arquivo para a exclusão.\n");
+        } else if (members_quantity > 3) {
+            for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
+                struct file_header_t *file = seek_element(list, argv[i]);
+                if(file != NULL) {
+                    delete_file(archive, file);
+                    remove_element(list, file->filename);
+                    free(file);
+                }
+                else
+                    fprintf(stderr, "O arquivo %s não foi encontrado em %s.\n", argv[i], argv[2]);
+            }
+        }
+
+        fseek(archive, 0, SEEK_SET);
+        fwrite(&archive_pointer, sizeof(size_t), 1, archive);
+        fclose(archive);
+        truncate(argv[2], archive_pointer);
+        archive = open_archiver(argv[2]);
+        fseek(archive, 0, SEEK_END);
+        store_list(archive, list, archive_pointer);
+        list = delete_list(list);
+    } else {
+        fprintf(stderr, "Não foi possível fazer a leitura do arquivo %s.\n", argv[2]);
+    }
 }
 
 /* -------- List -------- */

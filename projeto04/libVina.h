@@ -9,7 +9,7 @@ void update_operation(FILE *archiver, char **argv, int members_quantity);
 
 void move_operation(FILE *archiver, char **argv, int members_quantity);
 
-void extract_operation(FILE *archiver, char **argv, int members_quantity);
+int extract_operation(FILE *archiver, char **argv, int members_quantity);
 
 void remove_operation(FILE *archiver, char **argv, int members_quantity);
 
