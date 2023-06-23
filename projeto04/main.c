@@ -68,6 +68,8 @@ int main(int argc, char *argv[]) {
         list_files(arq);
     } else if (modo == EXTRAIR) {
         extract_operation(arq, argv, argc);
+    } else if (modo == REMOVER) {
+        remove_operation(arq, argv, argc);
     }
 
     fclose(arq);
