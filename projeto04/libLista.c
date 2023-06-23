@@ -33,10 +33,12 @@ int is_empty(struct list_t *list) {
     return (list->head == NULL);
 }
 
-void update_order(struct list_t *list, struct list_node_t *node) {
+void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix) {
     if(node != NULL) {
+        node->file->archive_position += pointer_fix;
         while (node->next != NULL) {
             node->next->file->order = node->file->order + 1;
+            node->next->file->archive_position += pointer_fix;
             node = node->next;
         }
     }
@@ -96,7 +98,7 @@ int add_list_head(struct list_t *list, struct file_header_t *file_data) {
 
     new->next = list->head;
     list->head = new;
-    update_order(list, list->head);
+    update_list(list, list->head, list->head->file->size);
 
     return 1;
 }
@@ -145,7 +147,7 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
     if(list->head->file->order > new->file->order) {
         new->next = list->head;
         list->head = new;
-        update_order(list, list->head);
+        update_list(list, list->head, list->head->file->size);
         
         return 1;
     }
@@ -158,7 +160,7 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
         list->tail = new;
     new->next = current->next;
     current->next = new;
-    update_order(list, current);
+    update_list(list, current, current->file->size);
 
     return 1;
 }
@@ -171,7 +173,16 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         return NULL;
 
     if(strcmp(list->head->file->filename, filename) == 0) {
-        return get_first_element(list);
+        aux = list->head;
+        temp_data = aux->file;
+        list->head = list->head->next;
+        if(list->head != NULL) {
+            (list->head->file->order)--;
+            update_list(list, list->head, temp_data->size * (-1));
+        }
+        aux->next = NULL;
+        free(aux);
+        return temp_data;
     }
 
     current = list->head;
@@ -182,10 +193,11 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         if(current->next == list->tail)
             list->tail = current;
         aux = current->next;
-        current->next = current->next->next;
         temp_data = aux->file;
+        current->next = current->next->next;
+        aux->next = NULL;
         free(aux);
-        update_order(list, current);
+        update_list(list, current->next, temp_data->size * (-1));
         return temp_data;
     }
 
@@ -216,7 +228,7 @@ struct file_header_t *get_first_element(struct list_t *list) {
     list->head = list->head->next;
     if(list->head != NULL) {
         (list->head->file->order)--;
-        update_order(list, list->head);
+        update_list(list, list->head, 0);
     }
     temp_node->next = NULL;
 
