@@ -147,42 +147,20 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
     return ftell(archive);
 }
 
+int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+    struct file_header_t *file_data;
+    char *new_filepath;
+    FILE *member;
 
-/* -------- Update -------- */
-//int update_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-//}
-
-void update_operation(FILE *archive, char **argv, int members_quantity) {
-}
-
-/* -------- Insert -------- */
-
-/*
- * Recebe um arquivo aberto em stream (archive), um ponteiro para uma posição neste arquivo,
- * uma lista encadeada e o nome de um arquivo (filename).
- * Se o arquivo existir, guarda seus metadados na lista encadeada e o binário no
- * arquivo aberto em stream (archive).
- * Vale notar que 
- */
-int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-    struct file_header_t *file_data = get_data(filename);
-    char *new_filepath = relativize_filepath(filename);
+    file_data = get_data(filename);
+    new_filepath = relativize_filepath(filename);
     strcpy(file_data->filename, new_filepath);
-    if(is_element_present(list, file_data->filename)) {
-        free(file_data);
-        free(new_filepath);
-        return 0;
-        //arrumar pro valor de retorno ser o update file
-        //return update_file(archive, list, filename, archive_pointer);
-    }
 
-    FILE *member = open_member(filename);
+    member = open_member(filename);
     if(member == NULL)
         return 0;
 
-    size_t file_size = file_data->size;
-
-    copy_file_content(member, archive, file_size);
+    copy_file_content(member, archive, file_data->size);
 
     /*
      * Guarda o ponto inicial de escrita nos metadados do arquivo e em seguida
@@ -198,6 +176,105 @@ int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *arch
     fclose(member);
 
     return 1;
+}
+
+int change_file_present(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+    struct file_header_t *new_data, *old_data;
+    char *new_filepath;
+    FILE *member;
+    int size_diff;
+    size_t file_end;
+
+    new_data = get_data(filename);
+    new_filepath = relativize_filepath(filename);
+    strcpy(new_data->filename, new_filepath);
+
+    old_data = remove_element(list, new_data->filename);
+    size_diff = new_data->size - old_data->size;
+    file_end = old_data->archive_position + old_data->size;
+
+    if(size_diff > 0)
+        shift_bytes_right(archive, old_data->archive_position, size_diff);
+    else if(size_diff < 0)
+        shift_bytes_left(archive, file_end, -size_diff);
+
+    member = open_member(filename);
+    if(member == NULL)
+        return 0;
+
+    fseek(archive, old_data->archive_position, SEEK_SET);
+    copy_file_content(member, archive, new_data->size);
+
+    new_data->order = old_data->order;
+    *archive_pointer += size_diff;
+    add_list_ordered(list, new_data);
+
+    free(new_data);
+    free(old_data);
+    free(new_filepath);
+    fclose(member);
+
+    return 1;
+}
+
+/* -------- Update -------- */
+
+int update_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+    struct file_header_t *file_data;
+    time_t old_mdate;
+
+    /*
+     * A função retornar tempo negativo implica que o membro não está presente
+     * no arquivador, e portanto, será normalmente inserido ao fim do arquivo.
+     */
+    if((old_mdate = get_element_modif_time(list, filename)) < 0)
+        return add_file_end(archive, list, filename, archive_pointer);
+
+    file_data = get_data(filename);
+    if(old_mdate < file_data->modif_date)
+        return change_file_present(archive, list, filename, archive_pointer);
+
+    return 0;
+}
+
+void update_operation(FILE *archive, char **argv, int members_quantity) {
+    struct list_t *list;
+    size_t archive_pointer;
+
+    if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        list = load_list(archive, archive_pointer);
+        fseek(archive, archive_pointer, SEEK_SET);
+    } else {
+        list = make_list();
+        archive_pointer = sizeof(size_t);
+        fwrite(&archive_pointer, sizeof(size_t), 1, archive);
+    }
+
+    for (int i = ARGUMENT_OFFSET; i < members_quantity; i++)
+        if(! update_file(archive, list, argv[i], &archive_pointer))
+            fprintf(stderr, "Não foi possível incluir o arquivo %s\n", argv[i]);
+
+    fseek(archive, 0, SEEK_SET);
+    fwrite(&archive_pointer, sizeof(size_t), 1, archive);
+
+    store_list(archive, list, archive_pointer);
+    list = delete_list(list);
+}
+
+/* -------- Insert -------- */
+
+/*
+ * Recebe um arquivo aberto em stream (archive), um ponteiro para uma posição neste arquivo,
+ * uma lista encadeada e o nome de um arquivo (filename).
+ * Se o arquivo existir, guarda seus metadados na lista encadeada e o binário no
+ * arquivo aberto em stream (archive).
+ * Vale notar que 
+ */
+int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
+    if(is_element_present(list, filename))
+        return change_file_present(archive, list, filename, archive_pointer);
+
+    return add_file_end(archive, list, filename, archive_pointer);
 }
 
 void insert_operation(FILE *archive, char **argv, int members_quantity) {
