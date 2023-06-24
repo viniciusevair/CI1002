@@ -202,12 +202,12 @@ void write_time(time_t time) {
 }
 
 void write_file_data(struct file_header_t *file) {
+    char *user_name, *group_name;
+    user_name = getpwuid(file->user_id)->pw_name;
+    group_name = getgrgid(file->group_id)->gr_name;
+
     write_permissions(file->mode);
-    printf(" ");
-    printf("%s/%s ", getpwuid(file->user_id)->pw_name, getgrgid(file->group_id)->gr_name);
-    printf("%zu", file->size);
-    printf(" ");
+    printf(" %s/%s %zu ", user_name, group_name, file->size);
     write_time(file->modif_date);
-    printf(" ");
-    printf("%s\n", file->filename);
+    printf(" %s\n", file->filename);
 }
