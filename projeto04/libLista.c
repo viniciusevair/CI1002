@@ -34,13 +34,10 @@ int is_empty(struct list_t *list) {
 }
 
 void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix) {
-    if(node != NULL) {
-        node->file->archive_position += pointer_fix;
-        while (node->next != NULL) {
-            node->next->file->order = node->file->order + 1;
-            node->next->file->archive_position += pointer_fix;
-            node = node->next;
-        }
+    while (node->next != NULL) {
+        node->next->file->order = node->file->order + 1;
+        node->next->file->archive_position += pointer_fix;
+        node = node->next;
     }
 }
 
@@ -96,6 +93,7 @@ int add_list_head(struct list_t *list, struct file_header_t *file_data) {
         return 1;
     }
 
+    new->file->archive_position = list->head->file->archive_position;
     new->next = list->head;
     list->head = new;
     update_list(list, list->head, list->head->file->size);
@@ -158,9 +156,11 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
 
     if(current == list->tail)
         list->tail = new;
+    new->file->archive_position = current->file->archive_position;
+    new->file->archive_position += current->file->size;
     new->next = current->next;
     current->next = new;
-    update_list(list, current, current->file->size);
+    update_list(list, current->next, current->next->file->size);
 
     return 1;
 }
@@ -178,6 +178,7 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         list->head = list->head->next;
         if(list->head != NULL) {
             (list->head->file->order)--;
+            list->head->file->archive_position -= temp_data->size;
             update_list(list, list->head, temp_data->size * (-1));
         }
         aux->next = NULL;
@@ -195,6 +196,7 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         aux = current->next;
         temp_data = aux->file;
         current->next = current->next->next;
+        current->next->file->archive_position -= temp_data->size;
         aux->next = NULL;
         free(aux);
         update_list(list, current->next, temp_data->size * (-1));
@@ -234,6 +236,7 @@ struct file_header_t *get_first_element(struct list_t *list) {
 
     temp_data = temp_node->file;
     free(temp_node);
+    temp_node = NULL;
 
     return temp_data;
 }
