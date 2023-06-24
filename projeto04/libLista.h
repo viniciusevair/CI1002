@@ -5,7 +5,7 @@
 
 struct list_node_t {
     struct file_header_t *file;
-    struct list_node_t *prev, *next;
+    struct list_node_t *next;
 };
 
 struct list_t {
