@@ -13,11 +13,19 @@
 #define BUFFER_SIZE 1024
 
 /* -------- Utilities -------- */
+
+// Recebe dois valores inteiros positivos. Devolve o menor deles.
 size_t min(size_t x, size_t y) {
     return (x <= y) ? x : BUFFER_SIZE;
 }
 
-struct list_t* load_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
+/*
+ * Recebe um arquivo e um ponteiro para uma posição dentro deste arquivo.
+ * Retorna os dados presentes a partir desta posição na forma de uma lista
+ * encadeada de struct file_header_t.
+ */
+struct list_t* load_list(FILE *archive, size_t archive_pointer) {
+    struct list_t *list = make_list();
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t temp;
     
@@ -27,7 +35,12 @@ struct list_t* load_list(FILE *archive, struct list_t *list, size_t archive_poin
     return list;
 }
 
-struct list_t* store_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
+/*
+ * Recebe um arquivo, uma lista encadeada e um ponteiro para uma posição no
+ * arquivo. Grava no arquivo a partir da posição recebida as informações
+ * presentes na lista encadeada.
+ */
+void store_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t *file_data;
     
@@ -35,16 +48,14 @@ struct list_t* store_list(FILE *archive, struct list_t *list, size_t archive_poi
         fwrite(file_data, sizeof(struct file_header_t), 1, archive);
         free(file_data);
     }
-
-    return list;
 }
 
 /*
- * Escreve "file_size" bytes do arquivo input no arquivo output.
+ * Escreve file_size bytes do arquivo input no arquivo output.
  * Assume que os ponteiros em ambos os arquivos já foram devidamente
  * posicionados nos pontos de leitura e escrita.
  */
-void process_file(FILE *input, FILE *output, size_t file_size) {
+void copy_file_content(FILE *input, FILE *output, size_t file_size) {
     char buffer[BUFFER_SIZE];
     size_t read_size, bytes_read;
 
@@ -59,8 +70,9 @@ void process_file(FILE *input, FILE *output, size_t file_size) {
 /*
  * Desloca todos os bytes do arquivo a partir do ponto shift_point uma
  * quantidade de shift_size bytes para a esquerda.
+ * Retorna a posição do ponteiro ao fim do shift.
  */
-void shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
+size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
     char buffer[BUFFER_SIZE + 1];
     size_t read_point, write_point, remaining_bytes, bytes_read, end_point;
 
@@ -72,24 +84,36 @@ void shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
     end_point = ftell(archive);
     remaining_bytes = end_point - read_point;
 
+    /*
+     * Copia os dados a partir do read_point até o fim do arquivo em blocos de
+     * BUFFER_SIZE(1024) bytes para o write_point, realizando o deslocamento de
+     * shift_size para a ESQUERDA.
+     */
     while (remaining_bytes > 0) {
         fseek(archive, read_point, SEEK_SET);
         bytes_read = fread(buffer, sizeof(char), BUFFER_SIZE, archive);
+
         fseek(archive, write_point, SEEK_SET);
         fwrite(buffer, sizeof(char), bytes_read, archive);
+
         read_point += bytes_read;
         write_point += bytes_read;
         remaining_bytes -= bytes_read;
     }
+
+    ftruncate(fileno(archive), ftell(archive));
+
+    return ftell(archive);
 }
 
 /*
  * Desloca todos os bytes do arquivo a partir do ponto shift_point uma
  * quantidade de shift_size bytes para a direita.
  */
-void shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
+size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
     char buffer[BUFFER_SIZE + 1];
     size_t remaining_bytes, bytes_read, read_size, start_point, end_point;
+    size_t read_point, write_point;
 
     // Acrescenta espaços suficientes ao fim do arquivo.
     fseek(archive, 0, SEEK_END);
@@ -102,18 +126,25 @@ void shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
 
     /*
      * Copia os dados a partir do start_point até o end_point em blocos de
-     * BUFFER_SIZE (1024) bytes, de trás pra frente, para o start_point +
-     * shift_size, abrindo assim shift_size espaços para serem sobrescritos de
-     * maneira segura.
+     * BUFFER_SIZE(1024) bytes, de trás pra frente, para o start_point +
+     * shift_size, realizando o deslocamento de shift_size para a direita e
+     * abrindo assim espaços para serem sobrescritos de maneira segura.
      */
     while (remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
-        fseek(archive, start_point + remaining_bytes - read_size, SEEK_SET);
+        read_point = start_point + remaining_bytes - read_size;
+        write_point = read_point + shift_size;
+
+        fseek(archive, read_point, SEEK_SET);
         bytes_read = fread(buffer, sizeof(char), read_size, archive);
-        fseek(archive, start_point + remaining_bytes - read_size + shift_size, SEEK_SET);
+
+        fseek(archive, write_point, SEEK_SET);
         fwrite(buffer, sizeof(char), bytes_read, archive);
+
         remaining_bytes -= bytes_read;
     }
+
+    return ftell(archive);
 }
 
 
@@ -125,12 +156,25 @@ void update_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Insert -------- */
+
+/*
+ * Recebe um arquivo aberto em stream (archive), um ponteiro para uma posição neste arquivo,
+ * uma lista encadeada e o nome de um arquivo (filename).
+ * Se o arquivo existir, guarda seus metadados na lista encadeada e o binário no
+ * arquivo aberto em stream (archive).
+ * Vale notar que 
+ */
 int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *file_data = get_data(filename);
-    strcpy(file_data->filename, relativize_filepath(filename));
-    if(is_element_present(list, file_data->filename))
+    char *new_filepath = relativize_filepath(filename);
+    strcpy(file_data->filename, new_filepath);
+    if(is_element_present(list, file_data->filename)) {
+        free(file_data);
+        free(new_filepath);
         return 0;
+        //arrumar pro valor de retorno ser o update file
         //return update_file(archive, list, filename, archive_pointer);
+    }
 
     FILE *member = open_member(filename);
     if(member == NULL)
@@ -138,24 +182,33 @@ int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *arch
 
     size_t file_size = file_data->size;
 
-    process_file(member, archive, file_size);
-    file_data->archive_position = *archive_pointer;
+    copy_file_content(member, archive, file_size);
 
+    /*
+     * Guarda o ponto inicial de escrita nos metadados do arquivo e em seguida
+     * atualiza a posição do ponteiro do arquivador.
+     */
+    file_data->archive_position = *archive_pointer;
     (*archive_pointer) += file_data->size;
+
     add_list_tail(list, file_data);
+
+    free(file_data);
+    free(new_filepath);
     fclose(member);
 
     return 1;
 }
 
 void insert_operation(FILE *archive, char **argv, int members_quantity) {
-    struct list_t *list = make_list();
+    struct list_t *list;
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
-        load_list(archive, list, archive_pointer);
+        list = load_list(archive, archive_pointer);
         fseek(archive, archive_pointer, SEEK_SET);
     } else {
+        list = make_list();
         archive_pointer = sizeof(size_t);
         fwrite(&archive_pointer, sizeof(size_t), 1, archive);
     }
@@ -172,7 +225,7 @@ void insert_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Move -------- */
-void move_file(FILE *archive, char **argv, int members_quantity) {
+void move_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Extract -------- */
@@ -189,7 +242,7 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
         return;
 
     fseek(archive, file_data->archive_position, SEEK_SET);
-    process_file(archive, member, file_size);
+    copy_file_content(archive, member, file_size);
 
     fclose(member);
 
@@ -209,11 +262,11 @@ void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
 }
 
 int extract_operation(FILE *archive, char **argv, int members_quantity) {
+    struct list_t *list;
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
-        struct list_t *list = make_list();
-        load_list(archive, list, archive_pointer);
+        list = load_list(archive, archive_pointer);
 
         if(members_quantity == 3) {
             extract_all(archive, list, archive_pointer);
@@ -237,22 +290,24 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Remove -------- */
-void delete_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
-    size_t read_point;
+size_t delete_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
+    size_t read_point, new_eof;
 
     fseek(archive, file->archive_position + file->size, SEEK_SET);
     read_point = ftell(archive);
 
-    shift_bytes_left(archive, read_point, file->size);
+    new_eof = shift_bytes_left(archive, read_point, file->size);
     remove_element(list, file->filename);
+
+    return new_eof;
 }
 
 void remove_operation(FILE *archive, char **argv, int members_quantity) {
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
-        struct list_t *list = make_list();
-        load_list(archive, list, archive_pointer);
+        struct list_t *list;
+        list = load_list(archive, archive_pointer);
         ftruncate(fileno(archive), archive_pointer);
 
         if(members_quantity == 3) {
