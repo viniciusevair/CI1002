@@ -10,7 +10,6 @@
 #include <grp.h>
 #include <time.h>
 
-
 FILE* make_archiver(FILE *archive, char *filename) {
     archive = fopen(filename, "wb+");
     if(! archive) {
@@ -138,6 +137,12 @@ FILE* open_member(char *filename) {
     return member;
 }
 
+/*
+ * Recebe como parâmetro o nome de um arquivo.
+ * Guarda os metadados do arquivo em uma struct. A responsabilidade por
+ * desalocar a memória é de quem chamou a função.
+ * Retorna a struct contendo os metadados.
+ */
 struct file_header_t* get_data(char *filename) {
     struct file_header_t *file_data;
     struct stat data_buffer;
