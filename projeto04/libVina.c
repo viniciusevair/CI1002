@@ -13,6 +13,10 @@
 #define BUFFER_SIZE 1024
 
 /* -------- Utilities -------- */
+size_t min(size_t x, size_t y) {
+    return (x <= y) ? x : BUFFER_SIZE;
+}
+
 struct list_t* load_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t temp;
@@ -42,11 +46,10 @@ struct list_t* store_list(FILE *archive, struct list_t *list, size_t archive_poi
  */
 void process_file(FILE *input, FILE *output, size_t file_size) {
     char buffer[BUFFER_SIZE];
-    size_t buffer_size, read_size, bytes_read;
-    buffer_size = BUFFER_SIZE;
+    size_t read_size, bytes_read;
 
     while (file_size > 0) {
-        read_size = (file_size < buffer_size)? file_size : buffer_size;
+        read_size = min(file_size, BUFFER_SIZE);
         bytes_read = fread(buffer, sizeof(char), read_size, input);
         fwrite(buffer, sizeof(char), bytes_read, output);
         file_size -= bytes_read;
@@ -54,40 +57,60 @@ void process_file(FILE *input, FILE *output, size_t file_size) {
 }
 
 /*
- * Puxa todos os bytes a partir do ponto de leitura inicial até o ponto de
- * escrita inicial. Isso é, faz um shift de (read_point - write_point) para
- * a esquerda.
+ * Desloca todos os bytes do arquivo a partir do ponto shift_point uma
+ * quantidade de shift_size bytes para a esquerda.
  */
-void shift_bytes_left(FILE *archive, long write_point, long read_point) {
-    char buffer[BUFFER_SIZE];
-    size_t bytes_read = BUFFER_SIZE;
+void shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
+    char buffer[BUFFER_SIZE + 1];
+    size_t read_point, write_point, remaining_bytes, bytes_read, end_point;
 
-    while (bytes_read >= BUFFER_SIZE) {
+    read_point = shift_point;
+    write_point = read_point - shift_size;
+
+    // Calcula o tamanho do segmento que vai ser deslocado.
+    fseek(archive, 0, SEEK_END);
+    end_point = ftell(archive);
+    remaining_bytes = end_point - read_point;
+
+    while (remaining_bytes > 0) {
         fseek(archive, read_point, SEEK_SET);
-        bytes_read = fread(buffer, 1, BUFFER_SIZE, archive);
+        bytes_read = fread(buffer, sizeof(char), BUFFER_SIZE, archive);
         fseek(archive, write_point, SEEK_SET);
-        fwrite(buffer, 1, bytes_read, archive);
+        fwrite(buffer, sizeof(char), bytes_read, archive);
         read_point += bytes_read;
         write_point += bytes_read;
+        remaining_bytes -= bytes_read;
     }
 }
 
-void shift_bytes_right(FILE *archive, long shift_point, size_t shift_size) {
-    char buffer[BUFFER_SIZE];
-    size_t bytes_read, read_size;
-    size_t start = shift_point;
+/*
+ * Desloca todos os bytes do arquivo a partir do ponto shift_point uma
+ * quantidade de shift_size bytes para a direita.
+ */
+void shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
+    char buffer[BUFFER_SIZE + 1];
+    size_t remaining_bytes, bytes_read, read_size, start_point, end_point;
 
+    // Acrescenta espaços suficientes ao fim do arquivo.
     fseek(archive, 0, SEEK_END);
-    size_t end = ftell(archive);
-    ftruncate(fileno(archive), end + shift_size);
+    end_point = ftell(archive);
+    start_point = shift_point;
+    ftruncate(fileno(archive), end_point + shift_size);
 
-    size_t remaining_bytes = end - start;
+    // Calcula o tamanho do segmento a ser deslocado.
+    remaining_bytes = end_point - start_point;
 
+    /*
+     * Copia os dados a partir do start_point até o end_point em blocos de
+     * BUFFER_SIZE (1024) bytes, de trás pra frente, para o start_point +
+     * shift_size, abrindo assim shift_size espaços para serem sobrescritos de
+     * maneira segura.
+     */
     while (remaining_bytes > 0) {
-        read_size = (remaining_bytes <= BUFFER_SIZE) ? remaining_bytes : BUFFER_SIZE;
-        fseek(archive, start + remaining_bytes - read_size, SEEK_SET);
+        read_size = min(remaining_bytes, BUFFER_SIZE);
+        fseek(archive, start_point + remaining_bytes - read_size, SEEK_SET);
         bytes_read = fread(buffer, sizeof(char), read_size, archive);
-        fseek(archive, start + remaining_bytes - read_size + shift_size, SEEK_SET);
+        fseek(archive, start_point + remaining_bytes - read_size + shift_size, SEEK_SET);
         fwrite(buffer, sizeof(char), bytes_read, archive);
         remaining_bytes -= bytes_read;
     }
@@ -214,14 +237,14 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Remove -------- */
-void delete_file(FILE *archive, struct file_header_t *file) {
-    long write_point, read_point;
+void delete_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
+    size_t read_point;
 
-    fseek(archive, file->archive_position, SEEK_SET);
-    write_point = ftell(archive);
-    read_point = write_point + file->size;
+    fseek(archive, file->archive_position + file->size, SEEK_SET);
+    read_point = ftell(archive);
 
-    shift_bytes_left(archive, write_point, read_point);
+    shift_bytes_left(archive, read_point, file->size);
+    remove_element(list, file->filename);
 }
 
 void remove_operation(FILE *archive, char **argv, int members_quantity) {
@@ -238,8 +261,7 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
             for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
                 struct file_header_t *file = seek_element(list, argv[i]);
                 if(file != NULL) {
-                    delete_file(archive, file);
-                    remove_element(list, file->filename);
+                    delete_file(archive, list, file);
                     free(file);
                 }
                 else
