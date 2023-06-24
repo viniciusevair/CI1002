@@ -35,10 +35,15 @@ struct list_t* store_list(FILE *archive, struct list_t *list, size_t archive_poi
     return list;
 }
 
+/*
+ * Escreve "file_size" bytes do arquivo input no arquivo output.
+ * Assume que os ponteiros em ambos os arquivos já foram devidamente
+ * posicionados nos pontos de leitura e escrita.
+ */
 void process_file(FILE *input, FILE *output, size_t file_size) {
+    char buffer[BUFFER_SIZE];
     size_t buffer_size, read_size, bytes_read;
     buffer_size = BUFFER_SIZE;
-    char buffer[buffer_size];
 
     while (file_size > 0) {
         read_size = (file_size < buffer_size)? file_size : buffer_size;
@@ -48,17 +53,43 @@ void process_file(FILE *input, FILE *output, size_t file_size) {
     }
 }
 
-void shift_bytes_left(FILE *archive, long writing_point, long reading_point) {
-    size_t bytes_read = BUFFER_SIZE;
+/*
+ * Puxa todos os bytes a partir do ponto de leitura inicial até o ponto de
+ * escrita inicial. Isso é, faz um shift de (read_point - write_point) para
+ * a esquerda.
+ */
+void shift_bytes_left(FILE *archive, long write_point, long read_point) {
     char buffer[BUFFER_SIZE];
+    size_t bytes_read = BUFFER_SIZE;
 
     while (bytes_read >= BUFFER_SIZE) {
-        fseek(archive, reading_point, SEEK_SET);
+        fseek(archive, read_point, SEEK_SET);
         bytes_read = fread(buffer, 1, BUFFER_SIZE, archive);
-        fseek(archive, writing_point, SEEK_SET);
+        fseek(archive, write_point, SEEK_SET);
         fwrite(buffer, 1, bytes_read, archive);
-        reading_point += bytes_read;
-        writing_point += bytes_read;
+        read_point += bytes_read;
+        write_point += bytes_read;
+    }
+}
+
+void shift_bytes_right(FILE *archive, long shift_point, size_t shift_size) {
+    char buffer[BUFFER_SIZE];
+    size_t bytes_read, read_size;
+    size_t start = shift_point;
+
+    fseek(archive, 0, SEEK_END);
+    size_t end = ftell(archive);
+    ftruncate(fileno(archive), end + shift_size);
+
+    size_t remaining_bytes = end - start;
+
+    while (remaining_bytes > 0) {
+        read_size = (remaining_bytes <= BUFFER_SIZE) ? remaining_bytes : BUFFER_SIZE;
+        fseek(archive, start + remaining_bytes - read_size, SEEK_SET);
+        bytes_read = fread(buffer, sizeof(char), read_size, archive);
+        fseek(archive, start + remaining_bytes - read_size + shift_size, SEEK_SET);
+        fwrite(buffer, sizeof(char), bytes_read, archive);
+        remaining_bytes -= bytes_read;
     }
 }
 
@@ -184,13 +215,13 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
 
 /* -------- Remove -------- */
 void delete_file(FILE *archive, struct file_header_t *file) {
-    long writing_point, reading_point;
+    long write_point, read_point;
 
     fseek(archive, file->archive_position, SEEK_SET);
-    writing_point = ftell(archive);
-    reading_point = writing_point + file->size;
+    write_point = ftell(archive);
+    read_point = write_point + file->size;
 
-    shift_bytes_left(archive, writing_point, reading_point);
+    shift_bytes_left(archive, write_point, read_point);
 }
 
 void remove_operation(FILE *archive, char **argv, int members_quantity) {
@@ -199,6 +230,7 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
         struct list_t *list = make_list();
         load_list(archive, list, archive_pointer);
+        ftruncate(fileno(archive), archive_pointer);
 
         if(members_quantity == 3) {
             fprintf(stderr, "Não foi especificado nenhum arquivo para a exclusão.\n");
@@ -217,9 +249,7 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
 
         fseek(archive, 0, SEEK_SET);
         fwrite(&archive_pointer, sizeof(size_t), 1, archive);
-        fclose(archive);
-        truncate(argv[2], archive_pointer);
-        archive = open_archiver(argv[2]);
+        ftruncate(fileno(archive), archive_pointer);
         fseek(archive, 0, SEEK_END);
         store_list(archive, list, archive_pointer);
         list = delete_list(list);
