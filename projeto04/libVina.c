@@ -28,7 +28,7 @@ struct list_t* load_list(FILE *archive, size_t archive_pointer) {
     struct list_t *list = make_list();
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t temp;
-    
+
     while (fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
         add_list_tail(list, &temp);
 
@@ -43,7 +43,7 @@ struct list_t* load_list(FILE *archive, size_t archive_pointer) {
 void store_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t *file_data;
-    
+
     while ((file_data = get_first_element(list))) {
         fwrite(file_data, sizeof(struct file_header_t), 1, archive);
         free(file_data);
@@ -61,8 +61,10 @@ void copy_file_content(FILE *input, FILE *output, size_t file_size) {
 
     while (file_size > 0) {
         read_size = min(file_size, BUFFER_SIZE);
+
         bytes_read = fread(buffer, sizeof(char), read_size, input);
         fwrite(buffer, sizeof(char), bytes_read, output);
+
         file_size -= bytes_read;
     }
 }
@@ -73,8 +75,9 @@ void copy_file_content(FILE *input, FILE *output, size_t file_size) {
  * Retorna a posição do ponteiro ao fim do shift.
  */
 size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
-    char buffer[BUFFER_SIZE + 1];
+    char buffer[BUFFER_SIZE];
     size_t read_point, write_point, remaining_bytes, bytes_read, end_point;
+    size_t read_size;
 
     read_point = shift_point;
     write_point = read_point - shift_size;
@@ -90,8 +93,10 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
      * shift_size para a ESQUERDA.
      */
     while (remaining_bytes > 0) {
+        read_size = min(remaining_bytes, BUFFER_SIZE);
+
         fseek(archive, read_point, SEEK_SET);
-        bytes_read = fread(buffer, sizeof(char), BUFFER_SIZE, archive);
+        bytes_read = fread(buffer, sizeof(char), read_size, archive);
 
         fseek(archive, write_point, SEEK_SET);
         fwrite(buffer, sizeof(char), bytes_read, archive);
@@ -111,7 +116,7 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
  * quantidade de shift_size bytes para a direita.
  */
 size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
-    char buffer[BUFFER_SIZE + 1];
+    char buffer[BUFFER_SIZE];
     size_t remaining_bytes, bytes_read, read_size, start_point, end_point;
     size_t read_point, write_point;
 
@@ -147,6 +152,7 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
     return ftell(archive);
 }
 
+// Adiciona um membro ao fim do arquivador.
 int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *file_data;
     char *new_filepath;
@@ -178,6 +184,11 @@ int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *arc
     return 1;
 }
 
+/*
+ * Atualiza o membro chamado "filename" dentro do arquivador para sua versão
+ * mais recente. Basicamente, troca o membro dentro do arquivador pelo novo de
+ * mesmo nome que está presente em disco.
+ */
 int change_file_present(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *new_data, *old_data;
     char *new_filepath;
@@ -193,6 +204,7 @@ int change_file_present(FILE *archive, struct list_t *list, char *filename, size
     size_diff = new_data->size - old_data->size;
     file_end = old_data->archive_position + old_data->size;
 
+    // Abre o espaço apropriado para o membro novo dentro do arquivador.
     if(size_diff > 0)
         shift_bytes_right(archive, old_data->archive_position, size_diff);
     else if(size_diff < 0)
@@ -215,6 +227,18 @@ int change_file_present(FILE *archive, struct list_t *list, char *filename, size
     fclose(member);
 
     return 1;
+}
+
+size_t remove_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
+    size_t read_point, new_eof;
+
+    fseek(archive, file->archive_position + file->size, SEEK_SET);
+    read_point = ftell(archive);
+
+    new_eof = shift_bytes_left(archive, read_point, file->size);
+    remove_element(list, file->filename);
+
+    return new_eof;
 }
 
 /* -------- Update -------- */
@@ -251,8 +275,10 @@ void update_operation(FILE *archive, char **argv, int members_quantity) {
     }
 
     for (int i = ARGUMENT_OFFSET; i < members_quantity; i++)
-        if(! update_file(archive, list, argv[i], &archive_pointer))
-            fprintf(stderr, "Não foi possível incluir o arquivo %s\n", argv[i]);
+        if(! update_file(archive, list, argv[i], &archive_pointer)) {
+            fprintf(stderr, "Não foi possível atualizar o arquivo \"%s\". ", argv[i]);
+            fprintf(stderr, "Data de modificação menor que a presente em \"%s\".\n", argv[2]);
+        }
 
     fseek(archive, 0, SEEK_SET);
     fwrite(&archive_pointer, sizeof(size_t), 1, archive);
@@ -302,7 +328,98 @@ void insert_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Move -------- */
-void move_operation(FILE *archive, char **argv, int members_quantity) {
+size_t get_target_end(struct list_t *list, struct file_header_t *target_data) {
+    return target_data->archive_position + target_data->size;
+}
+
+int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_point, size_t order) {
+    printf("Testezera:\n");
+    read_list(list);
+    struct file_header_t *file_data = seek_element(list, filename);
+    size_t write_point, read_point, remaining_bytes, read_size, bytes_read;
+    char buffer[BUFFER_SIZE];
+
+    // file_data null implica que o arquivo não existe no arquivador. 
+    if(file_data == NULL)
+        return 0;
+
+    read_point = file_data->archive_position;
+    write_point = move_point;
+
+    /*
+     * Ajusta a posição de leitura e a posição antiga dentro do arquivador caso
+     * estes estejam para frente do target, pois serão afetados pelo shift.
+     * Também aumenta o contador de ordem, pois se o arquivo estiver pra frente
+     * do target, ele fica na próxima posição, mas se for antes do target, ele
+     * vai tomar a posição do target (que vai receber -1 na ordem).
+     */
+    if(read_point > write_point) {
+        file_data->archive_position += file_data->size;
+        read_point += file_data->size;
+        order++;
+    }
+    shift_bytes_right(archive, write_point, file_data->size);
+
+    remaining_bytes = file_data->size;
+    while (remaining_bytes > 0) {
+        read_size = min(remaining_bytes, BUFFER_SIZE);
+
+        fseek(archive, read_point, SEEK_SET);
+        printf("ftell do read: %ld\n", ftell(archive));
+        bytes_read = fread(buffer, sizeof(char), read_size, archive);
+        printf("buffer text: %s\n", buffer);
+
+        fseek(archive, write_point, SEEK_SET);
+        fwrite(buffer, sizeof(char), bytes_read, archive);
+
+        read_point += bytes_read;
+        write_point += bytes_read;
+        remaining_bytes -= bytes_read;
+    }
+
+    remove_file(archive, list, file_data);
+
+    file_data->archive_position = move_point;
+    file_data->order = order;
+    add_list_ordered(list, file_data);
+
+    return 1;
+}
+
+int move_operation(FILE *archive, char **argv, int members_quantity, char *target) {
+    struct file_header_t *target_data;
+    struct list_t *list;
+    size_t archive_pointer, move_point, order;
+    char *filename, *target_filename;
+
+    if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        list = load_list(archive, archive_pointer);
+        fseek(archive, archive_pointer, SEEK_SET);
+    } else {
+        return 0;
+    }
+
+    target_filename = relativize_filepath(target);
+    target_data = seek_element(list, target_filename);
+    move_point = get_target_end(list, target_data);
+    order = target_data->order;
+
+    for (int i = ARGUMENT_OFFSET + 1; i < members_quantity; i++) {
+        filename = relativize_filepath(argv[i]);
+        if(strcmp(filename, target_filename) == 0)
+            continue;
+        if(! move_file(archive, list, filename, move_point, order))
+            fprintf(stderr, "Não foi possível mover o arquivo %s\n", argv[i]);
+
+        target_data = seek_element(list, filename);
+        move_point = get_target_end(list, target_data);
+        order = target_data->order;
+    }
+
+    store_list(archive, list, archive_pointer);
+
+    list = delete_list(list);
+    return 1;
 }
 
 /* -------- Extract -------- */
@@ -331,7 +448,7 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
 
 void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
     struct file_header_t *temp;
-    
+
     while ((temp = get_first_element(list))) {
         extract_file(archive, temp);
         free(temp);
@@ -341,6 +458,7 @@ void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
 int extract_operation(FILE *archive, char **argv, int members_quantity) {
     struct list_t *list;
     size_t archive_pointer;
+    char *filename;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
         list = load_list(archive, archive_pointer);
@@ -349,11 +467,13 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
             extract_all(archive, list, archive_pointer);
         } else if (members_quantity > 3) {
             for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
-                struct file_header_t *file = seek_element(list, argv[i]);
-                if(file != NULL)
-                    extract_file(archive, file);
+                filename = relativize_filepath(argv[i]);
+                struct file_header_t *file_data = seek_element(list, filename);
+                if(file_data != NULL)
+                    extract_file(archive, file_data);
                 else
                     fprintf(stderr, "Não foi possível extrair o arquivo \"%s\".\n", argv[i]);
+                free(filename);
             }
         }
 
@@ -367,18 +487,6 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
 }
 
 /* -------- Remove -------- */
-size_t delete_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
-    size_t read_point, new_eof;
-
-    fseek(archive, file->archive_position + file->size, SEEK_SET);
-    read_point = ftell(archive);
-
-    new_eof = shift_bytes_left(archive, read_point, file->size);
-    remove_element(list, file->filename);
-
-    return new_eof;
-}
-
 void remove_operation(FILE *archive, char **argv, int members_quantity) {
     size_t archive_pointer;
 
@@ -393,7 +501,7 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
             for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
                 struct file_header_t *file = seek_element(list, argv[i]);
                 if(file != NULL) {
-                    delete_file(archive, list, file);
+                    remove_file(archive, list, file);
                     free(file);
                 }
                 else
@@ -418,7 +526,7 @@ void list_files(FILE *archive) {
     fread(&archive_pointer, sizeof(size_t), 1, archive);
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t temp;
-    
+
     while (fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
         write_file_data(&temp);
 }
