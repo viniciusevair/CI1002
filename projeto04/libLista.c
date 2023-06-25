@@ -197,6 +197,7 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         temp_data = aux->file;
         current->next = current->next->next;
         if(current->next != NULL) {
+            (current->next->file->order)--;
             current->next->file->archive_position -= temp_data->size;
             update_list(list, current->next, temp_data->size * (-1));
         }
@@ -215,7 +216,7 @@ void read_list(struct list_t *list) {
         printf("A lista está vazia.\n");
 
     while (current != NULL) {
-        write_file_data(current->file);
+        print_file_data(current->file);
 
         current = current->next;
     }
