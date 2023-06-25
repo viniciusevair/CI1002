@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     if(modo == INSERIR) {
         insert_operation(arq, argv, argc);
     } else if(modo == LISTAR) {
-        list_files(arq);
+        list_operation(arq);
     } else if(modo == EXTRAIR) {
         extract_operation(arq, argv, argc);
     } else if(modo == REMOVER) {
