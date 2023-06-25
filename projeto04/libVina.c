@@ -90,7 +90,7 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
     /*
      * Copia os dados a partir do read_point até o fim do arquivo em blocos de
      * BUFFER_SIZE(1024) bytes para o write_point, realizando o deslocamento de
-     * shift_size para a ESQUERDA.
+     * shift_size para a esquerda.
      */
     while (remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
@@ -106,6 +106,7 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
         remaining_bytes -= bytes_read;
     }
 
+    // Trunca o arquivo jogando fora os bytes ao final que não foram sobrescritos.
     ftruncate(fileno(archive), ftell(archive));
 
     return ftell(archive);
@@ -113,7 +114,8 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
 
 /*
  * Desloca todos os bytes do arquivo a partir do ponto shift_point uma
- * quantidade de shift_size bytes para a direita.
+ * quantidade de shift_size bytes para a direita. Retorna um size_t indicando a
+ * posição em que a escrita terminou no archive.
  */
 size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
     char buffer[BUFFER_SIZE];
@@ -133,7 +135,7 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
      * Copia os dados a partir do start_point até o end_point em blocos de
      * BUFFER_SIZE(1024) bytes, de trás pra frente, para o start_point +
      * shift_size, realizando o deslocamento de shift_size para a direita e
-     * abrindo assim espaços para serem sobrescritos de maneira segura.
+     * abrindo assim espaços para serem escritos sem sobrescrever informações.
      */
     while (remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
@@ -185,9 +187,9 @@ int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *arc
 }
 
 /*
- * Atualiza o membro chamado "filename" dentro do arquivador para sua versão
- * mais recente. Basicamente, troca o membro dentro do arquivador pelo novo de
- * mesmo nome que está presente em disco.
+ * Atualiza o membro "filename" dentro do arquivador para sua versão
+ * mais recente. Basicamente, troca o membro dentro do arquivador pelo atual
+ * membro de mesmo nome que está presente em disco.
  */
 int change_file_present(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
     struct file_header_t *new_data, *old_data;
@@ -522,13 +524,12 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
 
 /* -------- List -------- */
 void list_files(FILE *archive) {
+    struct list_t *list;
     size_t archive_pointer;
-    fread(&archive_pointer, sizeof(size_t), 1, archive);
-    fseek(archive, archive_pointer, SEEK_SET);
-    struct file_header_t temp;
-
-    while (fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
-        write_file_data(&temp);
+    if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        list = load_list(archive, archive_pointer);
+        read_list(list);
+    }
 }
 
 /* -------- Help -------- */
