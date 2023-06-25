@@ -126,7 +126,6 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
     fseek(archive, 0, SEEK_END);
     end_point = ftell(archive);
     start_point = shift_point;
-    ftruncate(fileno(archive), end_point + shift_size);
 
     // Calcula o tamanho do segmento a ser deslocado.
     remaining_bytes = end_point - start_point;
