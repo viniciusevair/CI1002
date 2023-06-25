@@ -142,7 +142,7 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
 
     memcpy(new->file, file_data, sizeof(struct file_header_t));
 
-    if(list->head->file->order > new->file->order) {
+    if(list->head->file->order >= new->file->order) {
         new->next = list->head;
         list->head = new;
         update_list(list, list->head, list->head->file->size);
@@ -196,10 +196,12 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
         aux = current->next;
         temp_data = aux->file;
         current->next = current->next->next;
-        current->next->file->archive_position -= temp_data->size;
+        if(current->next != NULL) {
+            current->next->file->archive_position -= temp_data->size;
+            update_list(list, current->next, temp_data->size * (-1));
+        }
         aux->next = NULL;
         free(aux);
-        update_list(list, current->next, temp_data->size * (-1));
         return temp_data;
     }
 
