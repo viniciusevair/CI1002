@@ -16,14 +16,36 @@ struct file_header_t {
     size_t archive_position;
 };
 
+/*
+ * Abre um arquivo em modo de leitura e escrita para ser manipulado. O caso de
+ * falha ao abrir o arquivo indica que ele ainda não existe e portanto, a função
+ * tenta criá-lo.
+ */
 FILE *open_archiver(char *filename);
 
-FILE *open_member(char *filename);
-
+/*
+ * Cria um arquivo em disco com o nome filename e o abre para escrita.
+ */
 FILE *make_member(char *filename);
 
+// Abre o arquivo filename em modo de leitura.
+FILE *open_member(char *filename);
+
+/*
+ * Recebe como parâmetro o nome de um arquivo.
+ * Guarda os metadados do arquivo em uma struct e a retorna em caso de sucesso,
+ * ou retorna NULL em caso de falha. A responsabilidade por
+ * desalocar a memória é de quem chamou a função.
+ */
 struct file_header_t *get_data(char *filename);
 
+/*
+ * Corrige os caminhos de arquivo para que todos tenham como endereço raíz o
+ * diretório corrente. Por uma questão puramente estética, arquivos cujo caminho
+ * final são o próprio diretório corrente e que foram passados de maneira não
+ * absoluta (por ex.: ./arquivo_pequeno) são representados apenas com o seu
+ * nome, sem indicador de caminho (por ex.: arquivo_pequeno).
+ */
 char *relativize_filepath(char *filename);
 
 void print_file_data(struct file_header_t *file);

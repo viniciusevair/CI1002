@@ -10,6 +10,11 @@
 #include <grp.h>
 #include <time.h>
 
+/*
+ * Cria um arquivo em modo de escrita e leitura para ser manipulado. O caso de
+ * falha impossibilita a continuação do programa e portanto finaliza a execução
+ * com valor EXIT_FAILURE.
+ */
 FILE* make_archiver(FILE *archive, char *filename) {
     archive = fopen(filename, "wb+");
     if(! archive) {
@@ -20,6 +25,11 @@ FILE* make_archiver(FILE *archive, char *filename) {
     return archive;
 }
 
+/*
+ * Abre um arquivo em modo de leitura e escrita para ser manipulado. O caso de
+ * falha ao abrir o arquivo indica que ele ainda não existe e portanto, a função
+ * tenta criá-lo.
+ */
 FILE* open_archiver(char *filename) {
     FILE *archive;
 
@@ -30,13 +40,17 @@ FILE* open_archiver(char *filename) {
     return archive;
 }
 
+/*
+ * Verifica se o filename é apenas o nome de um arquivo no diretório corrente ou
+ * se possui algum diretório em sua especificação também.
+ */
 int single_name(char *filename) {
     int count = 0;
     for(int i = 0; i < strlen(filename); i++) {
         if(filename[i] == '/')
             count++;
-        if(count > 1)
-            return 0;
+        if(count > 1) // count > 1 implica que há mais de uma "/" no filename e
+            return 0; // portanto, possui um diretório no nome.
     }
 
     return 1;
@@ -45,9 +59,9 @@ int single_name(char *filename) {
 /*
  * Corrige os caminhos de arquivo para que todos tenham como endereço raíz o
  * diretório corrente. Por uma questão puramente estética, arquivos cujo caminho
- * final são o próprio diretório corrente (por ex.: ./arquivo_pequeno) são
- * representados apenas com o seu nome, sem indicador de caminho (por ex.:
- * arquivo_pequeno).
+ * final são o próprio diretório corrente e que foram passados de maneira não
+ * absoluta (por ex.: ./arquivo_pequeno) são representados apenas com o seu
+ * nome, sem indicador de caminho (por ex.: arquivo_pequeno).
  */
 char *relativize_filepath(char *filename) {
     char *new_filename = strdup(filename);
@@ -57,27 +71,32 @@ char *relativize_filepath(char *filename) {
 
     char *parent_dir_ptr = strstr(new_filename, parent_directory);
 
-    // Verifica se o arquivo começa com um indicador de diretório pai.
+    /*
+     * Verifica se o arquivo começa com um indicador de diretório pai. Em caso
+     * positivo, transforma o indicador de diretório pai num indicador de
+     * diretório corrente.
+     */
     if(parent_dir_ptr != NULL && strncmp(parent_dir_ptr, new_filename, 4) == 0)
         memmove(new_filename, new_filename + 1, strlen(new_filename));
 
     char *current_dir_ptr = strstr(new_filename, current_directory);
 
-    // Verifica se o arquivo começa com um indicador de diretório corrente.
-    // Para remover o indicador no caso de arquivo sem diretórios.
+    /*
+     * Verifica se o arquivo começa com um indicador de diretório corrente, para
+     * remover o indicador no caso de arquivo sem diretórios.
+     */
     if(current_dir_ptr != NULL && strncmp(current_dir_ptr, new_filename, 3) == 0) {
         if(single_name(new_filename))
             strcpy(new_filename, strrchr(new_filename, '/') + 1);
         return new_filename;
     }
 
-    /*
-     * Verifica se o nome do arquivo contém um caminho absoluto ou diretório
-     * corrente, mas sem indicador no inicio.
-     */
+    // Adiciona a "/" ao inicio caso o filename não comece com este caractere.
     if(new_filename[0] != '/')
         strcat(new_filepath, "/");
 
+    // Por fim, adiciona o "." no início do nome para garantir que todo filename
+    // passado esteja referente ao diretório corrente.
     if(strrchr(new_filename, '/')) {        
         strcat(new_filepath, new_filename); 
         strcpy(new_filename, new_filepath); 
@@ -86,6 +105,10 @@ char *relativize_filepath(char *filename) {
     return new_filename;
 }
 
+/*
+ * Cria os diretórios indicados no filename caso estes ainda não existam.
+ * Retorna 1 em caso de sucesso e 0 em caso de erros.
+ */
 int make_directories(char *filename, mode_t mode) {
     char *modifiable_path = strdup(filename);
     char filepath[FILENAME_MAX] = ".";
@@ -95,10 +118,11 @@ int make_directories(char *filename, mode_t mode) {
         strcat(filepath, "/");
         strcat(filepath, token);
         if(mkdir(filepath, mode) != 0) {
-            if(errno == EEXIST) {
-                token = strtok(NULL, "/");
-                continue;
-            }
+            if(errno == EEXIST) {           // O erro EEXIST apenas indica que o
+                token = strtok(NULL, "/");  // subdiretório já existe e portanto
+                continue;                   // o laço pode seguir para a próxima
+            }                               // iteração. 
+
             return 0;
         }
 
@@ -108,6 +132,7 @@ int make_directories(char *filename, mode_t mode) {
     return 1;
 }
 
+// Verifica se há a necessidade de gerenciar diretórios no filename.
 void verify_directories(char *filename) {
     char *path_separator = strrchr(filename, '/');
     if(path_separator != NULL) {
@@ -118,20 +143,22 @@ void verify_directories(char *filename) {
     }
 }
 
+/*
+ * Cria um arquivo em disco com o nome filename e o abre para escrita.
+ */
 FILE *make_member(char *filename) {
     FILE *member;
 
     verify_directories(filename);
     member = fopen(filename, "wb");
     if(member == NULL) {
-        member = fopen(filename, "wb");
-        if(member == NULL)
-            fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
+        fprintf(stderr, "Erro ao criar arquivo %s\n", filename);
     }
 
     return member;
 }
 
+// Abre o arquivo filename em modo de leitura.
 FILE* open_member(char *filename) {
     FILE *member;
 
@@ -169,27 +196,29 @@ struct file_header_t* get_data(char *filename) {
     return file_data;
 }
 
+// Retorna o caractere referente ao tipo especificado pelo valor de mode.
 char type_handler(int mode) {
     switch(mode & S_IFMT) {
-        case S_IFBLK:
+        case S_IFBLK:       // Block device
             return 'b';
-        case S_IFCHR:
+        case S_IFCHR:       // Character device
             return 'c';
-        case S_IFDIR:
+        case S_IFDIR:       // Directory
             return 'd';
-        case S_IFIFO:
+        case S_IFIFO:       // FIFO file
             return 'p';
-        case S_IFLNK:
+        case S_IFLNK:       // Symbolic link
             return 'l';
-        case S_IFREG:
+        case S_IFREG:       // Regular file
             return '-';
-        case S_IFSOCK:
+        case S_IFSOCK:      // Socket
             return 's';
         default:
             return '-';
     }
 }
 
+// Imprime o tipo de arquivo e as permissões para usuário, grupo e outros.
 void print_permissions(mode_t mode) {
     printf("%c", type_handler(mode));
     printf((mode & S_IRUSR)? "r" : "-");
@@ -203,6 +232,7 @@ void print_permissions(mode_t mode) {
     printf((mode & S_IXOTH)? "x" : "-");
 }
 
+// Imprime a data especificada por time no formato americano YYYY-MM-DD H:M
 void print_time(time_t time) {
     struct tm *formated_time = localtime(&time);
     char date[200];
@@ -211,6 +241,7 @@ void print_time(time_t time) {
     printf("%s", date);
 }
 
+// Imprime todos os metadados do arquivo. I. e., os dados guardados na struct.
 void print_file_data(struct file_header_t *file) {
     char *user_name, *group_name;
     user_name = getpwuid(file->user_id)->pw_name;
