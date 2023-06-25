@@ -4,6 +4,10 @@
 #include "lib_lista.h"
 #include "lib_arquivos.h"
 
+/*
+ * Cria e aloca espaço para uma lista encadeada. Retorna a lista criada em caso
+ * de sucesso e NULL em caso de falha.
+ */
 struct list_t *make_list() {
     struct list_t *list;
         
@@ -18,6 +22,11 @@ struct list_t *make_list() {
     return list;
 }
 
+/*
+ * Libera toda a memória associada aos nodos da lista e em seguida a memória da
+ * lista. Sempre retorna NULL para aterrar o ponteiro da lista que chamou a
+ * função.
+ */
 struct list_t *delete_list(struct list_t *list) {
     while(list->head != NULL) {
         struct list_node_t *aux = list->head;
@@ -35,6 +44,10 @@ int is_empty(struct list_t *list) {
     return (list->head == NULL);
 }
 
+/*
+ * Corrige a ordem de todos os nodos após uma inserção/remoção ser feita na
+ * lista. Também atualiza a posição inicial dos membros dentro do arquivo.
+ */
 void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix) {
     while(node->next != NULL) {
         node->next->file->order = node->file->order + 1;
@@ -43,14 +56,25 @@ void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix)
     }
 }
 
+/*
+ * Busca um elemento dentro da lista. Retorna o ponteiro para o dado guardado
+ * pelo nodo caso o elemento exista na lista, e NULL caso não exista ou a lista
+ * esteja vazia.
+ */
 struct file_header_t *seek_element(struct list_t *list, char *filename) {
     struct list_node_t *current = list->head;
+    /* 
+     * Relativiza o filename para uso pela função de inserção/atualização, que
+     * ainda não guardaram o nome relativo por não terem acessado o arquivo em
+     * disco.
+     */
+    char *relative_filename = relativize_filepath(filename);
 
     if(is_empty(list))
         return NULL;
 
     while(current != NULL) {
-        if(strcmp(current->file->filename, filename) == 0)
+        if(strcmp(current->file->filename, relative_filename) == 0)
            return current->file;
 
         current = current->next;
@@ -59,6 +83,10 @@ struct file_header_t *seek_element(struct list_t *list, char *filename) {
     return NULL;
 }
 
+/*
+ * Retorna a data de modificação dos metadados de um elemento da lista. Caso o
+ * elemento não exista na lista, retorna -1.
+ */
 time_t get_element_modif_time(struct list_t *list, char *filename) {
     struct file_header_t *aux;
     aux = seek_element(list, filename);
@@ -69,17 +97,21 @@ time_t get_element_modif_time(struct list_t *list, char *filename) {
     return -1;
 }
 
-int is_element_present(struct list_t *list, char *filename) {
-    if(seek_element(list, filename))
-        return 1;
-    return 0;
-}
-
+/*
+ * Adiciona um nodo ao início da lista. O dado guardado é uma cópia de
+ * file_data. O dado order da cópia guardada é modificado para refletir a nova
+ * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
+ * memória para o dado.
+ */
 int add_list_head(struct list_t *list, struct file_header_t *file_data) {
     struct list_node_t *new;
-    if(! (new = malloc(sizeof(struct list_node_t))))
+
+    if(! (new = malloc(sizeof(struct list_node_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
+    }
     if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
@@ -103,6 +135,12 @@ int add_list_head(struct list_t *list, struct file_header_t *file_data) {
     return 1;
 }
 
+/*
+ * Adiciona um nodo ao fim da lista. O dado guardado é uma cópia de
+ * file_data. O dado order da cópia guardada é modificado para refletir a nova
+ * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
+ * memória para o dado.
+ */
 int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
     struct list_node_t *new;
 
@@ -110,9 +148,12 @@ int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
         return add_list_head(list, file_data);
     }
 
-    if(! (new = malloc(sizeof(struct list_node_t))))
+    if(! (new = malloc(sizeof(struct list_node_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
+    }
     if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
@@ -127,6 +168,12 @@ int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
     return 1;
 }
 
+/*
+ * Adiciona um nodo em ordem na lista. Para tal, é necessário que a variável
+ * order de file_data seja previamente definida. O dado guardado é uma cópia de
+ * file_data. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
+ * memória para o dado.
+ */
 int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
     struct list_node_t *new, *current;
 
@@ -134,9 +181,12 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
         return add_list_head(list, file_data);
     }
 
-    if(! (new = malloc(sizeof(struct list_node_t))))
+    if(! (new = malloc(sizeof(struct list_node_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
+    }
     if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+        fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
@@ -167,6 +217,11 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
     return 1;
 }
 
+/*
+ * Remove um elemento especificado da lista. Retorna a struct guardada pelo nodo
+ * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
+ * responsabilidade de quem chamou a função.
+ */
 struct file_header_t *remove_element(struct list_t *list, char *filename) {
     struct list_node_t *current, *aux;
     struct file_header_t *temp_data;
@@ -211,6 +266,8 @@ struct file_header_t *remove_element(struct list_t *list, char *filename) {
     return NULL;
 }
 
+
+// Caminha por toda a lista imprimindo os dados de cada nodo.
 void read_list(struct list_t *list) {
     struct list_node_t *current = list->head;
 
@@ -224,6 +281,11 @@ void read_list(struct list_t *list) {
     }
 }
 
+/*
+ * Remove o primeiro elemento da lista. Retorna a struct guardada pelo nodo
+ * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
+ * responsabilidade de quem chamou a função.
+ */
 struct file_header_t *get_first_element(struct list_t *list) {
     struct list_node_t *temp_node;
     struct file_header_t *temp_data;
