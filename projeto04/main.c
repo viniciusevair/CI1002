@@ -70,6 +70,10 @@ int main(int argc, char *argv[]) {
         extract_operation(arq, argv, argc);
     } else if (modo == REMOVER) {
         remove_operation(arq, argv, argc);
+    } else if (modo == ATUALIZAR) {
+        update_operation(arq, argv, argc);
+    } else if (modo == MOVER) {
+        move_operation(arq, argv, argc, target);
     }
 
     fclose(arq);
