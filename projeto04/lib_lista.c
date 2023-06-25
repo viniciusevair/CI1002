@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "libLista.h"
-#include "libArquivos.h"
+#include "lib_lista.h"
+#include "lib_arquivos.h"
 
 struct list_t *make_list() {
     struct list_t *list;
@@ -34,7 +34,7 @@ int is_empty(struct list_t *list) {
 }
 
 void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix) {
-    while (node->next != NULL) {
+    while(node->next != NULL) {
         node->next->file->order = node->file->order + 1;
         node->next->file->archive_position += pointer_fix;
         node = node->next;
@@ -47,7 +47,7 @@ struct file_header_t *seek_element(struct list_t *list, char *filename) {
     if(is_empty(list))
         return NULL;
 
-    while (current != NULL) {
+    while(current != NULL) {
         if(strcmp(current->file->filename, filename) == 0)
            return current->file;
 
@@ -215,7 +215,7 @@ void read_list(struct list_t *list) {
     if(is_empty(list))
         printf("A lista está vazia.\n");
 
-    while (current != NULL) {
+    while(current != NULL) {
         print_file_data(current->file);
 
         current = current->next;

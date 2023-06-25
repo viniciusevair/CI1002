@@ -5,9 +5,9 @@
 #include <time.h>
 #include <utime.h>
 #include <sys/stat.h>
-#include "libArquivos.h"
-#include "libLista.h"
-#include "libVina.h"
+#include "lib_arquivos.h"
+#include "lib_lista.h"
+#include "lib_vina.h"
 
 #define ARGUMENT_OFFSET 3
 #define BUFFER_SIZE 1024
@@ -29,7 +29,7 @@ struct list_t* load_list(FILE *archive, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t temp;
 
-    while (fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
+    while(fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
         add_list_tail(list, &temp);
 
     return list;
@@ -44,7 +44,7 @@ void store_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
     struct file_header_t *file_data;
 
-    while ((file_data = get_first_element(list))) {
+    while((file_data = get_first_element(list))) {
         fwrite(file_data, sizeof(struct file_header_t), 1, archive);
         free(file_data);
     }
@@ -59,7 +59,7 @@ void copy_file_content(FILE *input, FILE *output, size_t file_size) {
     char buffer[BUFFER_SIZE];
     size_t read_size, bytes_read;
 
-    while (file_size > 0) {
+    while(file_size > 0) {
         read_size = min(file_size, BUFFER_SIZE);
 
         bytes_read = fread(buffer, sizeof(char), read_size, input);
@@ -92,7 +92,7 @@ size_t shift_bytes_left(FILE *archive, size_t shift_point, size_t shift_size) {
      * BUFFER_SIZE(1024) bytes para o write_point, realizando o deslocamento de
      * shift_size para a esquerda.
      */
-    while (remaining_bytes > 0) {
+    while(remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
 
         fseek(archive, read_point, SEEK_SET);
@@ -137,7 +137,7 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
      * shift_size, realizando o deslocamento de shift_size para a direita e
      * abrindo assim espaços para serem escritos sem sobrescrever informações.
      */
-    while (remaining_bytes > 0) {
+    while(remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
         read_point = start_point + remaining_bytes - read_size;
         write_point = read_point + shift_size;
@@ -276,7 +276,7 @@ void update_operation(FILE *archive, char **argv, int members_quantity) {
         fwrite(&archive_pointer, sizeof(size_t), 1, archive);
     }
 
-    for (int i = ARGUMENT_OFFSET; i < members_quantity; i++)
+    for(int i = ARGUMENT_OFFSET; i < members_quantity; i++)
         if(! update_file(archive, list, argv[i], &archive_pointer)) {
             fprintf(stderr, "Não foi possível atualizar o arquivo \"%s\". ", argv[i]);
             fprintf(stderr, "Data de modificação menor que a presente em \"%s\".\n", argv[2]);
@@ -318,7 +318,7 @@ void insert_operation(FILE *archive, char **argv, int members_quantity) {
         fwrite(&archive_pointer, sizeof(size_t), 1, archive);
     }
 
-    for (int i = ARGUMENT_OFFSET; i < members_quantity; i++)
+    for(int i = ARGUMENT_OFFSET; i < members_quantity; i++)
         if(! insert_file(archive, list, argv[i], &archive_pointer))
             fprintf(stderr, "Não foi possível incluir o arquivo %s\n", argv[i]);
 
@@ -361,7 +361,7 @@ int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_po
     shift_bytes_right(archive, write_point, file_data->size);
 
     remaining_bytes = file_data->size;
-    while (remaining_bytes > 0) {
+    while(remaining_bytes > 0) {
         read_size = min(remaining_bytes, BUFFER_SIZE);
 
         fseek(archive, read_point, SEEK_SET);
@@ -402,7 +402,7 @@ int move_operation(FILE *archive, char **argv, int members_quantity, char *targe
     move_point = get_target_end(list, target_data);
     order = target_data->order;
 
-    for (int i = ARGUMENT_OFFSET + 1; i < members_quantity; i++) {
+    for(int i = ARGUMENT_OFFSET + 1; i < members_quantity; i++) {
         filename = relativize_filepath(argv[i]);
         if(strcmp(filename, target_filename) == 0)
             continue;
@@ -447,7 +447,7 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
 void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
     struct file_header_t *temp;
 
-    while ((temp = get_first_element(list))) {
+    while((temp = get_first_element(list))) {
         extract_file(archive, temp);
         free(temp);
     }
@@ -463,8 +463,8 @@ int extract_operation(FILE *archive, char **argv, int members_quantity) {
 
         if(members_quantity == 3) {
             extract_all(archive, list, archive_pointer);
-        } else if (members_quantity > 3) {
-            for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
+        } else if(members_quantity > 3) {
+            for(int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
                 filename = relativize_filepath(argv[i]);
                 struct file_header_t *file_data = seek_element(list, filename);
                 if(file_data != NULL)
@@ -495,15 +495,15 @@ void remove_operation(FILE *archive, char **argv, int members_quantity) {
 
         if(members_quantity == 3) {
             fprintf(stderr, "Não foi especificado nenhum arquivo para a exclusão.\n");
-        } else if (members_quantity > 3) {
-            for (int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
+        } else if(members_quantity > 3) {
+            for(int i = ARGUMENT_OFFSET; i < members_quantity; i++) {
                 struct file_header_t *file = seek_element(list, argv[i]);
                 if(file != NULL) {
                     remove_file(archive, list, file);
                     free(file);
                 }
                 else
-                    fprintf(stderr, "O arquivo %s não foi encontrado em %s.\n", argv[i], argv[2]);
+                    fprintf(stderr, "O arquivo \"%s\" não foi encontrado em \"%s\".\n", argv[i], argv[2]);
             }
         }
 

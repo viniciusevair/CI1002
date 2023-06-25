@@ -1,7 +1,7 @@
 #ifndef __LISTA
 #define __LISTA
 
-#include "libArquivos.h"
+#include "lib_arquivos.h"
 
 struct list_node_t {
     struct file_header_t *file;

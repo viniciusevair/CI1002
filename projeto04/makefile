@@ -5,7 +5,7 @@ PROGRAM_NAME = vina++
 CC = gcc
 
 # arquivos-objeto
-OBJECTS = main.o libArquivos.o libLista.o libVina.o
+OBJECTS = main.o lib_arquivos.o lib_lista.o lib_vina.o
 
 all: $(PROGRAM_NAME)
 
@@ -15,14 +15,14 @@ $(PROGRAM_NAME): $(OBJECTS)
 main.o: main.c
 	$(CC) -c $(CFLAGS) main.c
 
-libArquivos.o: libArquivos.c
-	$(CC) -c $(CFLAGS) libArquivos.c
+lib_arquivos.o: lib_arquivos.c
+	$(CC) -c $(CFLAGS) lib_arquivos.c
 
-libLista.o: libLista.c
-	$(CC) -c $(CFLAGS) libLista.c
+lib_lista.o: lib_lista.c
+	$(CC) -c $(CFLAGS) lib_lista.c
 
-libVina.o: libVina.c
-	$(CC) -c $(CFLAGS) libVina.c
+lib_vina.o: lib_vina.c
+	$(CC) -c $(CFLAGS) lib_vina.c
 
 clean:
 	rm -f $(OBJECTS)

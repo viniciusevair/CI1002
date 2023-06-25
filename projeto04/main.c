@@ -8,8 +8,8 @@
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
-#include "libArquivos.h"
-#include "libVina.h"
+#include "lib_arquivos.h"
+#include "lib_vina.h"
 
 enum modo_t {NOP, INSERIR, ATUALIZAR, MOVER, EXTRAIR, REMOVER, LISTAR, AJUDA};
 
@@ -28,8 +28,8 @@ int main(int argc, char *argv[]) {
     char *target;
     char *filename;
 
-    while ((opt = getopt(argc, argv, "iam:xrch")) != -1) {
-        switch (opt) {
+    while((opt = getopt(argc, argv, "iam:xrch")) != -1) {
+        switch(opt) {
             case 'i':
                 modo = INSERIR;
                 break;
@@ -62,17 +62,17 @@ int main(int argc, char *argv[]) {
     filename = strdup(argv[archive_arg_position]);
 
     arq = open_archiver(filename);
-    if (modo == INSERIR) {
+    if(modo == INSERIR) {
         insert_operation(arq, argv, argc);
-    } else if (modo == LISTAR) {
+    } else if(modo == LISTAR) {
         list_files(arq);
-    } else if (modo == EXTRAIR) {
+    } else if(modo == EXTRAIR) {
         extract_operation(arq, argv, argc);
-    } else if (modo == REMOVER) {
+    } else if(modo == REMOVER) {
         remove_operation(arq, argv, argc);
-    } else if (modo == ATUALIZAR) {
+    } else if(modo == ATUALIZAR) {
         update_operation(arq, argv, argc);
-    } else if (modo == MOVER) {
+    } else if(modo == MOVER) {
         move_operation(arq, argv, argc, target);
     }
 

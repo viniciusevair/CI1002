@@ -1,4 +1,4 @@
-#include "libArquivos.h"
+#include "lib_arquivos.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,33 +45,31 @@ int single_name(char *filename) {
 /*
  * Corrige os caminhos de arquivo para que todos tenham como endereço raíz o
  * diretório corrente. Por uma questão puramente estética, arquivos cujo caminho
- * final são o próprio diretório corrente (por ex.: ./arquivoPequeno) são
+ * final são o próprio diretório corrente (por ex.: ./arquivo_pequeno) são
  * representados apenas com o seu nome, sem indicador de caminho (por ex.:
- * arquivoPequeno).
+ * arquivo_pequeno).
  */
 char *relativize_filepath(char *filename) {
     char *new_filename = strdup(filename);
     char new_filepath[FILENAME_MAX] = ".";
     char current_directory[3] = "./";
     char parent_directory[4] = "../";
-    char home_directory[3] = "~/";
+
+    char *parent_dir_ptr = strstr(new_filename, parent_directory);
+
+    // Verifica se o arquivo começa com um indicador de diretório pai.
+    if(parent_dir_ptr != NULL && strncmp(parent_dir_ptr, new_filename, 4) == 0)
+        memmove(new_filename, new_filename + 1, strlen(new_filename));
 
     char *current_dir_ptr = strstr(new_filename, current_directory);
-    char *parent_dir_ptr = strstr(new_filename, parent_directory);
-    char *home_dir_ptr = strstr(new_filename, home_directory);
 
     // Verifica se o arquivo começa com um indicador de diretório corrente.
+    // Para remover o indicador no caso de arquivo sem diretórios.
     if(current_dir_ptr != NULL && strncmp(current_dir_ptr, new_filename, 3) == 0) {
         if(single_name(new_filename))
             strcpy(new_filename, strrchr(new_filename, '/') + 1);
         return new_filename;
     }
-    // Verifica se o arquivo começa com um indicador de diretório pai.
-    if(parent_dir_ptr != NULL && strncmp(parent_dir_ptr, new_filename, 4) == 0)
-        return new_filename;
-    // Verifica se o arquivo começa com um indicador de diretório home.
-    if(home_dir_ptr != NULL && strncmp(home_dir_ptr, new_filename, 3) == 0)
-        return new_filename;
 
     /*
      * Verifica se o nome do arquivo contém um caminho absoluto ou diretório
@@ -93,7 +91,7 @@ int make_directories(char *filename, mode_t mode) {
     char filepath[FILENAME_MAX] = ".";
     char *token = strtok(modifiable_path, "/");
 
-    while (token != NULL) {
+    while(token != NULL) {
         strcat(filepath, "/");
         strcat(filepath, token);
         if(mkdir(filepath, mode) != 0) {
