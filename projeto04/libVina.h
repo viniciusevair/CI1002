@@ -7,7 +7,7 @@ void insert_operation(FILE *archiver, char **argv, int members_quantity);
 
 void update_operation(FILE *archiver, char **argv, int members_quantity);
 
-void move_operation(FILE *archiver, char **argv, int members_quantity);
+int move_operation(FILE *archiver, char **argv, int members_quantity, char *target);
 
 int extract_operation(FILE *archiver, char **argv, int members_quantity);
 
