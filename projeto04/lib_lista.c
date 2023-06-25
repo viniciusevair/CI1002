@@ -7,8 +7,10 @@
 struct list_t *make_list() {
     struct list_t *list;
         
-    if(! (list = malloc(sizeof(struct list_t))))
+    if(! (list = malloc(sizeof(struct list_t)))) {
+        fprintf(stderr, "Não foi possível alocar memória para a lista encadeada.\n");
         return NULL;
+    }
 
     list->head = NULL;
     list->tail = NULL;
