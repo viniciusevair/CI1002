@@ -335,8 +335,6 @@ size_t get_target_end(struct list_t *list, struct file_header_t *target_data) {
 }
 
 int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_point, size_t order) {
-    printf("Testezera:\n");
-    read_list(list);
     struct file_header_t *file_data = seek_element(list, filename);
     size_t write_point, read_point, remaining_bytes, read_size, bytes_read;
     char buffer[BUFFER_SIZE];
@@ -367,9 +365,7 @@ int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_po
         read_size = min(remaining_bytes, BUFFER_SIZE);
 
         fseek(archive, read_point, SEEK_SET);
-        printf("ftell do read: %ld\n", ftell(archive));
         bytes_read = fread(buffer, sizeof(char), read_size, archive);
-        printf("buffer text: %s\n", buffer);
 
         fseek(archive, write_point, SEEK_SET);
         fwrite(buffer, sizeof(char), bytes_read, archive);
