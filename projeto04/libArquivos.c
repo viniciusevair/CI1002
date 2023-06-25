@@ -42,6 +42,13 @@ int single_name(char *filename) {
     return 1;
 }
 
+/*
+ * Corrige os caminhos de arquivo para que todos tenham como endereço raíz o
+ * diretório corrente. Por uma questão puramente estética, arquivos cujo caminho
+ * final são o próprio diretório corrente (por ex.: ./arquivoPequeno) são
+ * representados apenas com o seu nome, sem indicador de caminho (por ex.:
+ * arquivoPequeno).
+ */
 char *relativize_filepath(char *filename) {
     char *new_filename = strdup(filename);
     char new_filepath[FILENAME_MAX] = ".";
@@ -185,7 +192,7 @@ char type_handler(int mode) {
     }
 }
 
-void write_permissions(mode_t mode) {
+void print_permissions(mode_t mode) {
     printf("%c", type_handler(mode));
     printf((mode & S_IRUSR)? "r" : "-");
     printf((mode & S_IWUSR)? "w" : "-");
@@ -198,7 +205,7 @@ void write_permissions(mode_t mode) {
     printf((mode & S_IXOTH)? "x" : "-");
 }
 
-void write_time(time_t time) {
+void print_time(time_t time) {
     struct tm *formated_time = localtime(&time);
     char date[200];
 
@@ -206,13 +213,13 @@ void write_time(time_t time) {
     printf("%s", date);
 }
 
-void write_file_data(struct file_header_t *file) {
+void print_file_data(struct file_header_t *file) {
     char *user_name, *group_name;
     user_name = getpwuid(file->user_id)->pw_name;
     group_name = getgrgid(file->group_id)->gr_name;
 
-    write_permissions(file->mode);
+    print_permissions(file->mode);
     printf(" %s/%s %zu ", user_name, group_name, file->size);
-    write_time(file->modif_date);
+    print_time(file->modif_date);
     printf(" %s\n", file->filename);
 }
