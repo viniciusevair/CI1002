@@ -13,7 +13,7 @@
 FILE* make_archiver(FILE *archive, char *filename) {
     archive = fopen(filename, "wb+");
     if(! archive) {
-        fprintf(stderr, "Erro ao criar arquivo.");
+        fprintf(stderr, "Erro ao abrir/criar arquivador.");
         exit(EXIT_FAILURE);
     }
 
