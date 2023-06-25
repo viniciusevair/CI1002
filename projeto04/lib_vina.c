@@ -328,7 +328,7 @@ int update_operation(FILE *archive, char **argv, int argument_count) {
  * membros.
  */
 int insert_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-    if(is_element_present(list, filename))
+    if(seek_element(list, filename))
         return change_file_present(archive, list, filename, archive_pointer);
 
     return add_file_end(archive, list, filename, archive_pointer);
