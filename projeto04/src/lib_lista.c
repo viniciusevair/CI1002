@@ -1,3 +1,8 @@
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +66,7 @@ void update_list(struct list_t *list, struct list_node_t *node, int pointer_fix)
  * pelo nodo caso o elemento exista na lista, e NULL caso não exista ou a lista
  * esteja vazia.
  */
-struct file_header_t *seek_element(struct list_t *list, char *filename) {
+struct member_metadata_t *seek_element(struct list_t *list, char *filename) {
     struct list_node_t *current = list->head;
     /* 
      * Relativiza o filename para uso pela função de inserção/atualização, que
@@ -88,7 +93,7 @@ struct file_header_t *seek_element(struct list_t *list, char *filename) {
  * elemento não exista na lista, retorna -1.
  */
 time_t get_element_modif_time(struct list_t *list, char *filename) {
-    struct file_header_t *aux;
+    struct member_metadata_t *aux;
     aux = seek_element(list, filename);
 
     if(aux != NULL)
@@ -103,20 +108,20 @@ time_t get_element_modif_time(struct list_t *list, char *filename) {
  * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_head(struct list_t *list, struct file_header_t *file_data) {
+int add_list_head(struct list_t *list, struct member_metadata_t *file_data) {
     struct list_node_t *new;
 
     if(! (new = malloc(sizeof(struct list_node_t)))) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
     }
-    if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+    if(! (new->file = malloc(sizeof(struct member_metadata_t)))) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
 
-    memcpy(new->file, file_data, sizeof(struct file_header_t));
+    memcpy(new->file, file_data, sizeof(struct member_metadata_t));
     new->file->order = 0;
     
     if(list->head == NULL) {    
@@ -141,7 +146,7 @@ int add_list_head(struct list_t *list, struct file_header_t *file_data) {
  * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
+int add_list_tail(struct list_t *list, struct member_metadata_t *file_data) {
     struct list_node_t *new;
 
     if(list->head == NULL) {    
@@ -152,13 +157,13 @@ int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
     }
-    if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+    if(! (new->file = malloc(sizeof(struct member_metadata_t)))) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
 
-    memcpy(new->file, file_data, sizeof(struct file_header_t));
+    memcpy(new->file, file_data, sizeof(struct member_metadata_t));
     
     new->next = NULL;
     list->tail->next = new;
@@ -174,7 +179,7 @@ int add_list_tail(struct list_t *list, struct file_header_t *file_data) {
  * file_data. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
+int add_list_ordered(struct list_t *list, struct member_metadata_t *file_data) {
     struct list_node_t *new, *current;
 
     if(list->head == NULL) {    
@@ -185,14 +190,14 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         return 0;
     }
-    if(! (new->file = malloc(sizeof(struct file_header_t)))) {
+    if(! (new->file = malloc(sizeof(struct member_metadata_t)))) {
         fprintf(stderr, "Erro ao alocar memória.\n");
         free(new);
         return 0;
     }
     new->next = NULL;
 
-    memcpy(new->file, file_data, sizeof(struct file_header_t));
+    memcpy(new->file, file_data, sizeof(struct member_metadata_t));
 
     if(list->head->file->order >= new->file->order) {
         new->next = list->head;
@@ -222,9 +227,9 @@ int add_list_ordered(struct list_t *list, struct file_header_t *file_data) {
  * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
  * responsabilidade de quem chamou a função.
  */
-struct file_header_t *remove_element(struct list_t *list, char *filename) {
+struct member_metadata_t *remove_element(struct list_t *list, char *filename) {
     struct list_node_t *current, *aux;
-    struct file_header_t *temp_data;
+    struct member_metadata_t *temp_data;
 
     if(is_empty(list))
         return NULL;
@@ -286,9 +291,9 @@ void read_list(struct list_t *list) {
  * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
  * responsabilidade de quem chamou a função.
  */
-struct file_header_t *get_first_element(struct list_t *list) {
+struct member_metadata_t *get_first_element(struct list_t *list) {
     struct list_node_t *temp_node;
-    struct file_header_t *temp_data;
+    struct member_metadata_t *temp_data;
 
     if(list->head == NULL)
         return NULL;

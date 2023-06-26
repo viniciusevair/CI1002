@@ -1,32 +1,21 @@
 CFLAGS = -Wall -g
 LDFLAGS = -lm
 PROGRAM_NAME = vina++
+SRC_DIR = src
 
 CC = gcc
 
 # arquivos-objeto
-OBJECTS = main.o lib_arquivos.o lib_lista.o lib_vina.o
+OBJECTS = $(SRC_DIR)/main.o $(SRC_DIR)/lib_arquivos.o 
+OBJECTS += $(SRC_DIR)/lib_lista.o $(SRC_DIR)/lib_vina.o
 
 all: $(PROGRAM_NAME)
 
 $(PROGRAM_NAME): $(OBJECTS)
 	$(CC) -o $(PROGRAM_NAME) $(OBJECTS) $(LDFLAGS)
 
-main.o: main.c
-	$(CC) -c $(CFLAGS) main.c
-
-lib_arquivos.o: lib_arquivos.c
-	$(CC) -c $(CFLAGS) lib_arquivos.c
-
-lib_lista.o: lib_lista.c
-	$(CC) -c $(CFLAGS) lib_lista.c
-
-lib_vina.o: lib_vina.c
-	$(CC) -c $(CFLAGS) lib_vina.c
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJECTS)
-
-purge: clean
-	rm -f $(PROGRAM_NAME)
-
+	rm -f $(OBJECTS) $(PROGRAM_NAME)

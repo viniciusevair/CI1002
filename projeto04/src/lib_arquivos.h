@@ -1,3 +1,8 @@
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #ifndef __ARQUIVOS
 #define __ARQUIVOS
 
@@ -5,7 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-struct file_header_t {
+struct member_metadata_t {
     char filename[FILENAME_MAX];
     size_t order;
     uid_t user_id;
@@ -37,7 +42,7 @@ FILE *open_member(char *filename);
  * ou retorna NULL em caso de falha. A responsabilidade por
  * desalocar a memória é de quem chamou a função.
  */
-struct file_header_t *get_data(char *filename);
+struct member_metadata_t *get_data(char *filename);
 
 /*
  * Corrige os caminhos de arquivo para que todos tenham como endereço raíz o
@@ -48,6 +53,6 @@ struct file_header_t *get_data(char *filename);
  */
 char *relativize_filepath(char *filename);
 
-void print_file_data(struct file_header_t *file);
+void print_file_data(struct member_metadata_t *file);
 
 #endif

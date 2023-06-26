@@ -1,4 +1,8 @@
-#include "lib_arquivos.h"
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +13,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include "lib_arquivos.h"
 
 /*
  * Cria um arquivo em modo de escrita e leitura para ser manipulado. O caso de
@@ -175,11 +180,11 @@ FILE* open_member(char *filename) {
  * desalocar a memória é de quem chamou a função.
  * Retorna a struct contendo os metadados.
  */
-struct file_header_t* get_data(char *filename) {
-    struct file_header_t *file_data;
+struct member_metadata_t* get_data(char *filename) {
+    struct member_metadata_t *file_data;
     struct stat data_buffer;
 
-    if(! (file_data = malloc(sizeof(struct file_header_t)))) {
+    if(! (file_data = malloc(sizeof(struct member_metadata_t)))) {
         fprintf(stderr, "Erro ao alocar memória");
         return NULL;
     }
@@ -242,7 +247,7 @@ void print_time(time_t time) {
 }
 
 // Imprime todos os metadados do arquivo. I. e., os dados guardados na struct.
-void print_file_data(struct file_header_t *file) {
+void print_file_data(struct member_metadata_t *file) {
     char *user_name, *group_name;
     user_name = getpwuid(file->user_id)->pw_name;
     group_name = getgrgid(file->group_id)->gr_name;

@@ -1,3 +1,8 @@
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,10 +24,32 @@ size_t min(size_t x, size_t y) {
     return (x <= y) ? x : BUFFER_SIZE;
 }
 
+void stamp_vpp_ownership(FILE *archive) {
+    char vpp_token[] = "vpp";
+
+    fseek(archive, sizeof(size_t), SEEK_SET);
+    fwrite(vpp_token, sizeof(char), 3, archive);
+}
+
+int verify_vpp_ownership(FILE *archive) {
+    char vpp_token[] = "vpp";
+    char first_bytes[4];
+
+    fseek(archive, sizeof(size_t), SEEK_SET);
+    fread(first_bytes, sizeof(char), 3, archive);
+
+    if(strcmp(first_bytes, vpp_token) == 0)
+        return 1;
+
+    fprintf(stderr, "O arquivo especificado não foi criado pelo arquivador vina++.\n");
+    fprintf(stderr, "Encerrando o programa.\n");
+    return 0;
+}
+
 /*
  * Recebe um arquivo e um ponteiro para uma posição dentro deste arquivo.
  * Retorna os dados presentes a partir desta posição na forma de uma lista
- * encadeada de struct file_header_t.
+ * encadeada de struct member_metadata_t.
  */
 struct list_t* load_list(FILE *archive, size_t archive_pointer) {
     struct list_t *list = make_list();
@@ -30,9 +57,9 @@ struct list_t* load_list(FILE *archive, size_t archive_pointer) {
         return NULL;
 
     fseek(archive, archive_pointer, SEEK_SET);
-    struct file_header_t temp;
+    struct member_metadata_t temp;
 
-    while(fread(&temp, sizeof(struct file_header_t), 1, archive) == 1)
+    while(fread(&temp, sizeof(struct member_metadata_t), 1, archive) == 1)
         add_list_tail(list, &temp);
 
     return list;
@@ -46,10 +73,10 @@ struct list_t* load_list(FILE *archive, size_t archive_pointer) {
  */
 void store_list(FILE *archive, struct list_t *list, size_t archive_pointer) {
     fseek(archive, archive_pointer, SEEK_SET);
-    struct file_header_t *file_data;
+    struct member_metadata_t *file_data;
 
     while((file_data = get_first_element(list))) {
-        fwrite(file_data, sizeof(struct file_header_t), 1, archive);
+        fwrite(file_data, sizeof(struct member_metadata_t), 1, archive);
         free(file_data);
     }
 }
@@ -162,7 +189,7 @@ size_t shift_bytes_right(FILE *archive, size_t shift_point, size_t shift_size) {
  * caso de não conseguir abrir o membro em stream para ser lido.
  */
 int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-    struct file_header_t *file_data;
+    struct member_metadata_t *file_data;
     char *new_filepath;
     FILE *member;
 
@@ -204,7 +231,7 @@ int add_file_end(FILE *archive, struct list_t *list, char *filename, size_t *arc
  * conseguir abrir o membro em stream para leitura.
  */
 int change_file_present(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-    struct file_header_t *new_data, *old_data;
+    struct member_metadata_t *new_data, *old_data;
     char *new_filepath;
     FILE *member;
     int size_diff;
@@ -244,7 +271,7 @@ int change_file_present(FILE *archive, struct list_t *list, char *filename, size
 }
 
 // Remove um membro de dentro do arquivo. Retorna o novo fim do arquivo.
-size_t remove_file(FILE *archive, struct list_t *list, struct file_header_t *file) {
+size_t remove_file(FILE *archive, struct list_t *list, struct member_metadata_t *file) {
     size_t read_point, new_eof;
 
     fseek(archive, file->archive_position + file->size, SEEK_SET);
@@ -266,7 +293,7 @@ size_t remove_file(FILE *archive, struct list_t *list, struct file_header_t *fil
  * Retorna 1 em caso de sucesso e 0 em casos de erros.
  */
 int update_file(FILE *archive, struct list_t *list, char *filename, size_t *archive_pointer) {
-    struct file_header_t *file_data;
+    struct member_metadata_t *file_data;
     time_t old_mdate;
 
     /*
@@ -295,9 +322,13 @@ int update_operation(FILE *archive, char **argv, int argument_count) {
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return 0;
+
         list = load_list(archive, archive_pointer);
         if(list == NULL)
             return 0;
+
         fseek(archive, archive_pointer, SEEK_SET);
     } else {
         return insert_operation(archive, argv, argument_count);
@@ -345,16 +376,21 @@ int insert_operation(FILE *archive, char **argv, int argument_count) {
     size_t archive_pointer;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return 0;
+
         list = load_list(archive, archive_pointer);
         if(list == NULL)
             return 0;
+
         fseek(archive, archive_pointer, SEEK_SET);
     } else {
         list = make_list();
         if(list == NULL)
             return 0;
-        archive_pointer = sizeof(size_t);
+        archive_pointer = sizeof(size_t) + 3;
         fwrite(&archive_pointer, sizeof(size_t), 1, archive);
+        stamp_vpp_ownership(archive);
     }
 
     for(int i = ARGUMENT_OFFSET; i < argument_count; i++)
@@ -372,7 +408,7 @@ int insert_operation(FILE *archive, char **argv, int argument_count) {
 
 /* -------- Move -------- */
 
-size_t get_target_end(struct list_t *list, struct file_header_t *target_data) {
+size_t get_target_end(struct list_t *list, struct member_metadata_t *target_data) {
     return target_data->archive_position + target_data->size;
 }
 
@@ -382,7 +418,7 @@ size_t get_target_end(struct list_t *list, struct file_header_t *target_data) {
  * arquivo e 1 em caso de sucesso.
  */
 int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_point, size_t order) {
-    struct file_header_t *file_data = seek_element(list, filename);
+    struct member_metadata_t *file_data = seek_element(list, filename);
     size_t write_point, read_point, remaining_bytes, read_size, bytes_read;
     char buffer[BUFFER_SIZE];
 
@@ -392,15 +428,20 @@ int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_po
     read_point = file_data->archive_position;
     write_point = move_point;
 
+    if(read_point == write_point)
+        return 1;
+
     /*
      * Ajusta a futura ordem no arquivo, a posição de leitura e a posição antiga
      * dentro do arquivo caso o membro esteja para frente do target, pois ele
      * será afetado pelo shift.
      */
     if(read_point > write_point) {
+        order++;
+        if(order == file_data->order)
+            return 1;
         file_data->archive_position += file_data->size;
         read_point += file_data->size;
-        order++;
     }
     shift_bytes_right(archive, write_point, file_data->size);
 
@@ -440,13 +481,17 @@ int move_file(FILE *archive, struct list_t *list, char *filename, size_t move_po
  * para leitura/escrita ou caso o membro target não exista.
  */
 int move_operation(FILE *archive, char **argv, int argument_count, char *target) {
-    struct file_header_t *target_data;
+    struct member_metadata_t *target_data;
     struct list_t *list;
     size_t archive_pointer, move_point, order;
     char *filename, *target_filename;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return 0;
+
         list = load_list(archive, archive_pointer);
+
         fseek(archive, archive_pointer, SEEK_SET);
     } else {
         return 0;
@@ -459,7 +504,7 @@ int move_operation(FILE *archive, char **argv, int argument_count, char *target)
         list = delete_list(list);
         return 0;
     }
-        
+
     move_point = get_target_end(list, target_data);
     order = target_data->order;
 
@@ -492,7 +537,7 @@ int move_operation(FILE *archive, char **argv, int argument_count, char *target)
  * não ter que caminhar pela lista duas vezes (verificando e depois extraindo).
  * Restaura as permissões e data de modificação originais do arquivo.
  */
-void extract_file(FILE *archive, struct file_header_t *file_data) {
+void extract_file(FILE *archive, struct member_metadata_t *file_data) {
     FILE *member = make_member(file_data->filename);
     size_t file_size = file_data->size;
     struct utimbuf original_time;
@@ -520,7 +565,7 @@ void extract_file(FILE *archive, struct file_header_t *file_data) {
  * associada a cada membro dentro da lista no processo, deixando-a vazia.
  */
 void extract_all(FILE *archive, struct list_t *list, size_t archive_pointer) {
-    struct file_header_t *temp;
+    struct member_metadata_t *temp;
 
     while((temp = get_first_element(list))) {
         extract_file(archive, temp);
@@ -539,6 +584,9 @@ int extract_operation(FILE *archive, char **argv, int argument_count) {
     char *filename;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return 0;
+
         list = load_list(archive, archive_pointer);
 
         if(argument_count == 3) {
@@ -546,7 +594,7 @@ int extract_operation(FILE *archive, char **argv, int argument_count) {
         } else if(argument_count > 3) {
             for(int i = ARGUMENT_OFFSET; i < argument_count; i++) {
                 filename = relativize_filepath(argv[i]);
-                struct file_header_t *file_data = seek_element(list, filename);
+                struct member_metadata_t *file_data = seek_element(list, filename);
                 if(file_data != NULL)
                     extract_file(archive, file_data);
                 else
@@ -576,6 +624,9 @@ int remove_operation(FILE *archive, char **argv, int argument_count) {
     char *filename;
 
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return 0;
+
         struct list_t *list;
         list = load_list(archive, archive_pointer);
         if(list == NULL)
@@ -594,7 +645,7 @@ int remove_operation(FILE *archive, char **argv, int argument_count) {
 
             for(int i = ARGUMENT_OFFSET; i < argument_count; i++) {
                 filename = relativize_filepath(argv[i]);
-                struct file_header_t *file = seek_element(list, filename);
+                struct member_metadata_t *file = seek_element(list, filename);
                 if(file != NULL) {
                     remove_file(archive, list, file);
                     free(file);
@@ -631,6 +682,9 @@ void list_operation(FILE *archive) {
     struct list_t *list;
     size_t archive_pointer;
     if(fread(&archive_pointer, sizeof(size_t), 1, archive)) {
+        if(! verify_vpp_ownership(archive))
+            return;
+
         list = load_list(archive, archive_pointer);
         read_list(list);
     } else {

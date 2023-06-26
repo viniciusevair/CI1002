@@ -1,10 +1,15 @@
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #ifndef __LISTA
 #define __LISTA
 
 #include "lib_arquivos.h"
 
 struct list_node_t {
-    struct file_header_t *file;
+    struct member_metadata_t *file;
     struct list_node_t *next;
 };
 
@@ -30,7 +35,7 @@ struct list_t *delete_list(struct list_t *l);
  * pelo nodo caso o elemento exista na lista, e NULL caso não exista ou a lista
  * esteja vazia.
  */
-struct file_header_t *seek_element(struct list_t *list, char *filename);
+struct member_metadata_t *seek_element(struct list_t *list, char *filename);
 
 /*
  * Retorna a data de modificação dos metadados de um elemento da lista. Caso o
@@ -44,7 +49,7 @@ time_t get_element_modif_time(struct list_t *list, char *filename);
  * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_head(struct list_t *l, struct file_header_t *file_data);
+int add_list_head(struct list_t *l, struct member_metadata_t *file_data);
 
 /*
  * Adiciona um nodo ao fim da lista. O dado guardado é uma cópia de
@@ -52,7 +57,7 @@ int add_list_head(struct list_t *l, struct file_header_t *file_data);
  * posição do dado. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_tail(struct list_t *l, struct file_header_t *file_data);
+int add_list_tail(struct list_t *l, struct member_metadata_t *file_data);
 
 /*
  * Adiciona um nodo em ordem na lista. Para tal, é necessário que a variável
@@ -60,14 +65,14 @@ int add_list_tail(struct list_t *l, struct file_header_t *file_data);
  * file_data. Retorna 1 em caso de sucesso e 0 caso não consiga alocar
  * memória para o dado.
  */
-int add_list_ordered(struct list_t *l, struct file_header_t *file_data);
+int add_list_ordered(struct list_t *l, struct member_metadata_t *file_data);
 
 /*
  * Remove um elemento especificado da lista. Retorna a struct guardada pelo nodo
  * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
  * responsabilidade de quem chamou a função.
  */
-struct file_header_t *remove_element(struct list_t *l, char *filename);
+struct member_metadata_t *remove_element(struct list_t *l, char *filename);
 
 // Caminha por toda a lista imprimindo os dados de cada nodo.
 void read_list(struct list_t *l);
@@ -77,6 +82,6 @@ void read_list(struct list_t *l);
  * e libera apenas a memória referente ao nodo. A memória da struct passa a ser
  * responsabilidade de quem chamou a função.
  */
-struct file_header_t *get_first_element(struct list_t *l);
+struct member_metadata_t *get_first_element(struct list_t *l);
 
 #endif

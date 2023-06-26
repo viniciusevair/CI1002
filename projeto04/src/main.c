@@ -1,6 +1,6 @@
 /*
  * Programa elaborado pelo aluno Vinicius Evair da Silva
- * para o projeto 02 da disciplina Programacao II (CI1002).
+ * para o projeto 04 da disciplina Programacao II (CI1002).
  */
 
 #include <stdlib.h>
@@ -11,8 +11,6 @@
 #include "lib_arquivos.h"
 #include "lib_vina.h"
 
-enum modo_t {NOP, INSERIR, ATUALIZAR, MOVER, EXTRAIR, REMOVER, LISTAR, AJUDA};
-
 void erro_entrada(char *argv[]) {
     fprintf(stderr, "Uso:\n");
     fprintf(stderr, "%s [-i | -a | -m <target> | -x | -r | -c | -h]", argv[0]);
@@ -21,8 +19,7 @@ void erro_entrada(char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    enum modo_t modo = NOP;
-    FILE *arq;
+    FILE *archive;
     int opt;
     int archive_arg_position = 2;
     char *target;
@@ -31,24 +28,36 @@ int main(int argc, char *argv[]) {
     while((opt = getopt(argc, argv, "iam:xrch")) != -1) {
         switch(opt) {
             case 'i':
-                modo = INSERIR;
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                insert_operation(archive, argv, argc);
                 break;
             case 'a':
-                modo = ATUALIZAR;
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                update_operation(archive, argv, argc);
                 break;
             case 'm':
-                modo = MOVER;
                 archive_arg_position = 3;
                 target = strdup(optarg);
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                move_operation(archive, argv, argc, target);
                 break;
             case 'x':
-                modo = EXTRAIR;
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                extract_operation(archive, argv, argc);
                 break;
             case 'r':
-                modo = REMOVER;
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                remove_operation(archive, argv, argc);
                 break;
             case 'c':
-                modo = LISTAR;
+                filename = strdup(argv[archive_arg_position]);
+                archive = open_archiver(filename);
+                list_operation(archive);
                 break;
             case 'h':
                 help_utility(argv[0]);
@@ -58,25 +67,7 @@ int main(int argc, char *argv[]) {
         }		
     }
 
-    //TIRAR DA MAIN DEPOIS ===================================================
-    filename = strdup(argv[archive_arg_position]);
-
-    arq = open_archiver(filename);
-    if(modo == INSERIR) {
-        insert_operation(arq, argv, argc);
-    } else if(modo == LISTAR) {
-        list_operation(arq);
-    } else if(modo == EXTRAIR) {
-        extract_operation(arq, argv, argc);
-    } else if(modo == REMOVER) {
-        remove_operation(arq, argv, argc);
-    } else if(modo == ATUALIZAR) {
-        update_operation(arq, argv, argc);
-    } else if(modo == MOVER) {
-        move_operation(arq, argv, argc, target);
-    }
-
-    fclose(arq);
+    fclose(archive);
     free(filename);
     return 0;
 }

@@ -1,3 +1,8 @@
+/*
+ * Biblioteca elaborada pelo aluno Vinicius Evair da Silva
+ * para o projeto 04 da disciplina Programacao II (CI1002).
+ */
+
 #ifndef __VINA
 #define __VINA
 

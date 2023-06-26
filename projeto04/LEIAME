@@ -1,0 +1,71 @@
+Relatório de Projeto IV - Arquivador VINA++
+Vinicius Evair da Silva
+ves22
+GRR20221251
+Graduando do Curso de Ciência da Computação
+
+I. Informações
+    Neste diretório (ves22) encontram-se: um makefile com as instruções all e
+clean, este arquivo (LEIAME), e um subdiretório src/ com os seguintes arquivos:
+    - main.c: Arquivo responsável pela entrada de dados e chamar corretamente
+    as operações a serem realizadas.
+    - lib_vina.c: Biblioteca principal do arquivador. Nela estão as funções de
+    cada opção possível de ser executada pelo arquivador, consequentemente,
+    todas as funções manipulações de arquivo binário são responsabilidade da
+    biblioteca lib_vina.c, inclusive a verificação se o <archive> passado como
+    argumento é um arquivo manipulável pelo arquivador.
+    - lib_vina.h: Header da biblioteca vina.
+    - lib_arquivos.c: Biblioteca responsável pela manipulação de disco, i. e.,
+    nela estão as funções responsáveis pela abertura e criação correta de
+    arquivos em disco, padronização dos nomes de arquivo a serem guardados no
+    <archive> e interpretação dos metadados para enviar para a saída padrão.
+    - lib_arquivos.h: Header da biblioteca de arquivos.
+    - lib_lista.c: Biblioteca responsável pelo gerenciamento da estrutura de
+    dados escolhida para o diretório do arquivador, que é uma lista encadeada de
+    direcionamento único. Possui uma única exceção à sua responsabilidade que é
+    na função update_order, que também corrige a informação da posição de onde
+    cada arquivo começa dentro de <archive>.
+    - lib_lista.h: Header da biblioteca de lista ligada.
+
+II. Implementação
+II.a. Formato do arquivo
+    O arquivo gerado pelo arquivador VINA++ nesta implementação segue o seguinte
+formato: um size_t indicando a posição do diretório, "vpp" nos 3 próximos bytes
+indicando que o arquivo pertence ao arquivador, seguido dos binários de todos os
+membros do arquivo, e por fim, o diretório do arquivo.
+
+II.b. Estrutura de Dados
+    A estrutura de dados utilizada, como indicada na seção anterior, foi uma
+lista encadeada de direcionamento único. A escolha se deu por conta da opção -m
+do programa, que troca membros de ordem, operação fácil de ser implementada numa
+lista ligada, mas não numa árvore binária, por exemplo, e também por não
+precisar se preocupar com tamanho e alocação de vetor, como num vetor ou numa
+tabela hash, por exemplo. Além disso, na maior parte dos casos, a inserção é
+feita ao fim do arquivo, e portanto, tendo um simples ponteiro de fim da
+lista faz com que quase toda inserção aconteça em O(1).
+    Em contrapartida, o uso da lista encadeada gera o problema da busca em O(n), 
+o que aumenta o custo de algumas operações e portanto algumas funções tiveram
+que ser repensadas para reduzir a quantidade de buscas feitas na lista. É o caso
+por exemplo, da função update_order citada na seção anterior, que é responsável
+por uma tarefa que foge do escopo da biblioteca, mas realizar tal tarefa na
+lib_vina após cada alteração na lista geraria uma busca a mais todas as vezes.
+
+II.c. Dificuldades
+    A maior dificuldade encontrada durante a produção do arquivador foi a
+implementação da função de deslocar bytes, em especial para a direita, que
+exigiu um controle um pouco menos óbvio das posições para fseek.
+    Entra as operações, a de mover membros exigiu um tempo dedicado bem maior
+que as demais, por envolver ambas as deslocações de bytes e ainda por cima com
+um controle condicional que pode afetar os locais a serem considerados como
+começo/fim dos membros.
+
+II.d. Bugs conhecidos
+    1. Ao passar como argumento para inserção um membro presente no diretório
+pai ("../arquivo", por exemplo) que tenha o mesmo nome de um membro já presente
+no arquivo, o membro sendo inserido substitui o membro que já estava presente no
+arquivo. Comportamento similar ao verificado no programa tar, que guarda o nome
+do membro sem o indicador de diretório pai, efetivamente duplicando os membros
+dentro do arquivo, mas só um deles acaba sendo acessível.
+    2. Não arquiva diretórios inteiros. Entra em loop infinito e não faz nada.
+Atualmente conta com um if de segurança que não permite a inclusão de
+diretórios.
