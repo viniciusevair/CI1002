@@ -19,7 +19,7 @@ Neste repositório encontram-se os seguintes trabalhos:
   <sub>TODO: Arrumar todo o código e evitar o remover o uso de wchar</sub>
 
 ## Projeto01 - Extrator de Arquivos
-  Implementação de um extrator de arquivos. Extrai arquivos de acordo com uma lógica específica para este projeto/avaliação.\ ***Atualmente não funcional***.
+  Implementação de um extrator de arquivos. Extrai arquivos de acordo com uma lógica específica para este projeto/avaliação. ***Atualmente não funcional***.\
   <sub>TODO: Arrumar a confusão feita durante a avaliação. A leitura está sendo feita como se os arquivos fossem uma string, o que quebra logo no primeiro \0, obiamente. Modificar a lógica para utilizar fread resolve. </sub>
   
   
